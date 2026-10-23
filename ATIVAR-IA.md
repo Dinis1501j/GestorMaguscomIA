@@ -4,7 +4,7 @@ O gestor manual continua em `/admin/`. A nova área “Importar produtos com IA�
 
 ## Ativação necessária no Supabase
 
-Esta pasta contém o código, mas a função ainda precisa de ser instalada no projeto `lmgtzauohphfaqduwudz`. A chave pública existente não permite instalar funções nem configurar secrets.
+A função `magus-analyze` e a migração de limites foram instaladas no projeto `lmgtzauohphfaqduwudz` em 23/10/2026. Falta configurar a chave da API OpenAI e concluir o teste real. Abaixo ficam os passos para configuração ou reinstalação. A chave pública existente não permite instalar funções nem configurar secrets.
 
 1. No SQL Editor do Supabase, executa `supabase/migrations/202610230001_ai_limits.sql`. Usa as funções de autorização já existentes (`magus_is_admin`). Não substitui tabelas do catálogo.
 2. Com a CLI Supabase autenticada, na raiz do projeto executa `supabase link --project-ref lmgtzauohphfaqduwudz`.

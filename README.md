@@ -1,8 +1,8 @@
-# Magus Art — testemagusart2
+# GestorMaguscomIA — Magus Art
 
 ## Assistente IA acrescentado
 
-O gestor manual foi preservado e ganhou a área **Importar produtos com IA**. Consulta [ATIVAR-IA.md](ATIVAR-IA.md) para instalar a função protegida no Supabase e configurar a chave de IA. A função ainda precisa de ativação; a ligação pública ao Supabase não permite fazer essa instalação.
+O gestor manual foi preservado e ganhou a área **Importar produtos com IA**. A função `magus-analyze` e os limites de utilização foram instalados no Supabase. Falta configurar a chave da API de IA e concluir um teste com uma print real. Consulta [ATIVAR-IA.md](ATIVAR-IA.md) para configuração e reinstalação.
 
 Site estático em HTML, CSS e JavaScript. Não necessita de dependências npm.
 
@@ -12,7 +12,7 @@ Site estático em HTML, CSS e JavaScript. Não necessita de dependências npm.
 2. Mantém essa janela aberta e visita http://127.0.0.1:4173/admin/.
 3. Escolhe uma peça ou cria uma nova. Preenche o nome, categoria, subcategoria, preço e descrição.
 4. Adiciona fotografias JPEG, PNG ou WebP (até 10 MB cada). A primeira é a capa; usa as setas para ordenar.
-5. Carrega em **Guardar alterações**. A gravação inclui todas as peças, categorias e eventos editados. Antes de gravar é criada uma cópia em `backup/edicao-.../`.
+5. Inicia sessão com uma conta administradora e carrega em **Publicar alterações**. A gravação envia fotografias e conteúdo para o Supabase, com controlo de versões para impedir que uma edição sobreponha outra.
 6. Abre **Ver site** para confirmar o resultado.
 
 Também podes executar `npm start` na pasta do site.
@@ -21,7 +21,7 @@ Os preços `??€` são intencionais e ficam assim até confirmação do respons
 
 As 17 fotografias inicialmente fora do catálogo aparecem em **Fotografias por rever**. Escolhe uma peça e associa a fotografia, ou cria uma nova peça antes de a associar. Não foram publicadas automaticamente. Os ficheiros originais foram preservados para manter os caminhos existentes.
 
-O gestor funciona apenas no computador, ligado a 127.0.0.1. Não é um painel remoto com autenticação. Um visitante do site público não pode guardar alterações. Para uma gestão remota futura, será necessário ligar um CMS com autenticação e publicação.
+O gestor usa autenticação e permissões de administrador no Supabase. Pode funcionar no servidor local ou num alojamento HTTPS que inclua `admin/`. Os dois repositórios usam o mesmo projeto Supabase: publicar por qualquer gestor atualiza o catálogo partilhado. Exporta uma cópia antes de alterações importantes.
 
 ## Páginas e ligações
 
@@ -47,7 +47,7 @@ Os links antigos `#galeria`, `#sobre`, `#processo`, `#agenda`, `#contacto` e `#p
 
 Executa `npm run check` e `npm test`. `npm run build` cria uma pasta nova em `dist/site-...` com os ficheiros públicos; exclui o gestor, o servidor e os backups. Publica o **conteúdo** dessa pasta no alojamento, ou usa os ficheiros fonte numa configuração existente de GitHub Pages, sem incluir `backup/`.
 
-Guardar no gestor altera os ficheiros locais; não envia alterações para o GitHub. É necessário enviar os ficheiros alterados e as novas imagens para o repositório e aguardar a publicação. A configuração de alojamento deve ser confirmada antes desse passo.
+Publicar no gestor atualiza o Supabase; não cria commits no GitHub. O catálogo público consulta o Supabase ao abrir a página. Alterações ao código precisam de publicação no alojamento. O novo repositório contém o código, mas criar o repositório não ativa automaticamente GitHub Pages.
 
 Não abras os HTML por duplo clique: o catálogo carrega dados JSON e precisa de um servidor HTTP. Usa o endereço apresentado pelo gestor.
 
