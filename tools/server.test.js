@@ -25,6 +25,8 @@ test('HTTP limits editing to same-origin local requests and hides backups',async
  const server=createServer();await new Promise(r=>server.listen(0,'127.0.0.1',r));const url='http://127.0.0.1:'+server.address().port;
  try{
   for(const p of ['/','/catalogo/?c=luminarias','/agenda/','/sobre/','/contacto/','/admin/','/data/catalog.json'])assert.equal((await fetch(url+p)).status,200,p);
+  for(const p of ['/assets/vendor/supabase.js','/assets/admin-ai.js','/assets/ai-contract.js','/assets/admin-ai.css'])assert.equal((await fetch(url+p)).status,200,p);
+  assert.equal((await fetch(url+'/supabase/functions/magus-analyze/index.ts')).status,404);
   assert.equal((await fetch(url+'/backup/2026-09-23-antes-reorganizacao/index.html')).status,404);
   assert.equal((await fetch(url+'/api/save',{method:'POST',headers:{'Content-Type':'application/json',Origin:'https://example.com'},body:'{}'})).status,403);
   assert.equal((await fetch(url+'/api/save',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).status,403);

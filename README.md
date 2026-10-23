@@ -1,5 +1,9 @@
 # Magus Art — testemagusart2
 
+## Assistente IA acrescentado
+
+O gestor manual foi preservado e ganhou a área **Importar produtos com IA**. Consulta [ATIVAR-IA.md](ATIVAR-IA.md) para instalar a função protegida no Supabase e configurar a chave de IA. A função ainda precisa de ativação; a ligação pública ao Supabase não permite fazer essa instalação.
+
 Site estático em HTML, CSS e JavaScript. Não necessita de dependências npm.
 
 ## Abrir o site e gerir conteúdo

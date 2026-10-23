@@ -21,7 +21,7 @@ export function createServer(directory=root){let saving=false;return http.create
   }
   if(req.method!=='GET'&&req.method!=='HEAD'){reply(405,{error:'Método não permitido.'});return;}
   if(pathname.endsWith('/'))pathname+='index.html';
-  if(!/^\/(?:index\.html|(?:catalogo|agenda|sobre|contacto|admin)\/index\.html|assets\/[a-z-]+\.(?:js|css)|data\/(?:catalog|events|unassigned)\.json|images\/[a-zA-Z0-9_./-]+|[a-zA-Z0-9_-]+\.jpeg)$/.test(pathname)||pathname.includes('..')){reply(404,{error:'Página não encontrada.'});return;}
+  if(!/^\/(?:index\.html|(?:catalogo|agenda|sobre|contacto|admin)\/index\.html|assets\/vendor\/supabase\.js|assets\/[a-z-]+\.(?:js|css)|data\/(?:catalog|events|unassigned)\.json|images\/[a-zA-Z0-9_./-]+|[a-zA-Z0-9_-]+\.jpeg)$/.test(pathname)||pathname.includes('..')){reply(404,{error:'Página não encontrada.'});return;}
   const file=path.join(directory,pathname.slice(1)),content=await fs.readFile(file);res.writeHead(200,{'Content-Type':mime[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(req.method==='HEAD'?undefined:content);
  }catch(e){reply(e.status||(e.code==='ENOENT'?404:400),{error:e.code==='ENOENT'?'Página não encontrada.':e.message});}
 });}

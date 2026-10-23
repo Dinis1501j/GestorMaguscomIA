@@ -12,7 +12,7 @@ export async function startLogin(onLogout) {
     login.querySelectorAll('input,button').forEach(e => e.disabled = true);
     document.querySelector('#forgot-password').disabled = true;
     say('O acesso online ainda não está ativado. Falta configurar a ligação ao serviço de contas.');
-    if (location.hostname === '127.0.0.1') document.querySelector('#local-editor-link').hidden = false;
+
     throw Error('Configuração online pendente. Os conteúdos existentes continuam disponíveis no site.');
   }
   let recovering = /(?:type=recovery|type=invite)/.test(location.hash);

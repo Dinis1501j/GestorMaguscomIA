@@ -1,0 +1,3 @@
+[functions.magus-analyze]
+verify_jwt = false
+# JWT verified explicitly through auth.getUser, then magus_is_admin, in the function.

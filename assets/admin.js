@@ -1,4 +1,5 @@
 import {partnersOf} from './partner-data.js?v=partners3';
+import {startAI} from './admin-ai.js';
 import {asset,el,json} from './shared.js';
 import {startLogin} from './admin-login.js';
 import {saveOnlineState} from './online-store.js?v=partners3';
@@ -71,6 +72,7 @@ $('#delete-partner').onclick=()=>{if(busy)return;const p=state.catalog.partners.
 
 try{
  const signed=await startLogin((completed=false)=>{if(completed){dirty=false;return true;}if(busy){message('Aguarda até terminar a operação.',true);return false;}if(dirty&&!confirm('Existem alterações por publicar. Queres sair e descartá-las?'))return false;return true;}); onlineClient=signed.client;state=signed.state;state.catalog.partners=partnersOf(state.catalog);currentPartner=state.catalog.partners[0]?.id;partnerSelectors();loadPartner();currentProduct=state.catalog.products[0]?.id;currentCategory=state.catalog.categories[0]?.id;selectors();loadProduct();loadCategory();loadEvent();$('#editor').hidden=false;message('Sessão iniciada. Publica quando terminares as alterações.');
+ startAI({client:onlineClient,getState:()=>state,setBusy:value=>{busy=value;$('#save').disabled=value;$('.admin-columns').inert=value;},addProducts:items=>{for(const item of items){const images=item.photos.map(photo=>{const path='images/catalogo/uploads/'+crypto.randomUUID()+'.jpeg';uploads.push({path,type:'image/jpeg',data:photo.split(',')[1]});return path;});const p={id:unique(item.name,state.catalog.products),name:item.name,price:item.price,category:item.category,subcategory:'',description:'',images};state.catalog.products.push(p);currentProduct=p.id;}changed();selectors();loadProduct();categoryOptions();}});
  const exportBtn=el('button',{class:'button',type:'button'},'Exportar cópia');exportBtn.onclick=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify({...state,uploads},null,2)],{type:'application/json'}));const link=el('a',{href:url,download:'magus-art-edicao.json'});link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};$('.toolbar').append(exportBtn);
  for(const file of await json('data/unassigned.json')){const row=el('div',{class:'media-row'}),btn=el('button',{class:'button',type:'button'},'Associar à peça');row.append(el('img',{src:asset(file),alt:file,loading:'lazy'}),el('span',{},file),btn);btn.onclick=()=>{const p=product();if(!p){message('Escolhe ou cria uma peça primeiro.',true);return;}if(!p.images.includes(file)){p.images.push(file);changed();pictures();categoryOptions();message('Fotografia associada a '+p.name+'.');}};$('#unassigned').append(row);}
 }catch(e){message(e.message,true);}
