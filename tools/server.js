@@ -3,15 +3,23 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {readState,saveState} from './storage.js';
+import {analyzeLocally,localStatus} from './local-ai.js';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.png':'image/png','.jpeg':'image/jpeg','.jpg':'image/jpeg','.webp':'image/webp'};
-export function createServer(directory=root){let saving=false;return http.createServer(async(req,res)=>{
+export function createServer(directory=root){let saving=false,analyzing=false;return http.createServer(async(req,res)=>{
  const reply=(status,data)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(data));};
  const origin='http://'+req.headers.host;
  if(!/^127\.0\.0\.1:\d+$/.test(req.headers.host||'')){reply(403,{error:'Acesso apenas local.'});return;}
  if(req.headers.origin&&req.headers.origin!==origin){reply(403,{error:'Origem não autorizada.'});return;}
  let pathname;try{pathname=decodeURIComponent(new URL(req.url,origin).pathname);}catch{reply(400,{error:'Endereço inválido.'});return;}
  try{
+  if(pathname==='/api/ai/status'&&req.method==='GET'){reply(200,await localStatus());return;}
+  if(pathname==='/api/ai/analyze'&&req.method==='POST'){
+   if(req.headers.origin!==origin||req.headers['content-type']!=='application/json'){reply(403,{error:'Pedido não autorizado.'});return;}
+   if(analyzing){reply(409,{error:'Já existe uma análise em curso. Aguarda.'});return;}
+   analyzing=true;
+   try{let size=0;const chunks=[];for await(const chunk of req){size+=chunk.length;if(size>8*1024*1024)throw Error('Print demasiado grande.');chunks.push(chunk);}const body=JSON.parse(Buffer.concat(chunks).toString('utf8'));reply(200,await analyzeLocally({image:body.image,authorization:req.headers.authorization}));}finally{analyzing=false;}return;
+  }
   if(pathname==='/api/state'&&req.method==='GET'){reply(200,await readState(directory));return;}
   if(pathname==='/api/save'&&req.method==='POST'){
    if(req.headers.origin!==origin||req.headers['content-type']!=='application/json'){reply(403,{error:'Pedido não autorizado.'});return;}

@@ -4,15 +4,18 @@ import {validateAnalysis} from './ai-contract.js';
 export function startAI({client, getState, addProducts, setBusy}) {
   const panel = el('section', {class:'ai-panel'});
   const heading = el('h2', {}, 'Importar produtos com IA');
-  const intro = el('p', {}, 'Carrega ou cola uma print. A IA lê o preço, pesquisa o nome e separa as fotografias do mesmo produto. Revê os recortes e os dados antes de adicionar.');
+  const local=location.hostname==='127.0.0.1';
+  const intro = el('p', {}, 'Carrega ou cola uma print. A IA local gratuita lê o preço, pesquisa o nome e separa as fotografias do mesmo produto. Revê os recortes e os dados antes de adicionar.');
   const input = el('input', {type:'file', accept:'image/jpeg,image/png,image/webp', 'aria-label':'Print do produto'});
   const analyze = el('button', {type:'button',class:'button'}, 'Analisar print');
   const status = el('p', {role:'status','aria-live':'polite'});
   const results = el('div');
   const preview = el('img', {alt:'Print a analisar',class:'ai-preview',hidden:true});
   panel.append(heading,intro,input,preview,analyze,status,results);
+  if(!local){input.disabled=true;analyze.disabled=true;status.textContent='Para usar a IA gratuita, abre Abrir-gestor.cmd no computador e visita http://127.0.0.1:4173/admin/. O gestor manual continua disponível aqui.';return document.querySelector('#editor .toolbar').after(panel);}
   document.querySelector('#editor .toolbar').after(panel);
   let image, dataUrl, working=false, selecting=false;
+  fetch('/api/ai/status').then(r=>r.json()).then(s=>{if(!image&&!selecting&&!working)status.textContent=s.available?(s.installed?'IA local pronta. Carrega ou cola uma print.':'Falta o modelo local. Executa: ollama pull '+s.model):'Abre o Ollama para usar a IA local gratuita.';}).catch(()=>{if(!image)status.textContent='Abre o gestor com Abrir-gestor.cmd para usar a IA local.';});
   async function select(file) {
     if(working||selecting)return;
     selecting=true;analyze.disabled=true;
@@ -26,7 +29,7 @@ export function startAI({client, getState, addProducts, setBusy}) {
       canvas.width=Math.round(image.naturalWidth*scale);canvas.height=Math.round(image.naturalHeight*scale);
       canvas.getContext('2d').drawImage(image,0,0,canvas.width,canvas.height);
       dataUrl=canvas.toDataURL('image/jpeg',0.9);preview.src=dataUrl;preview.hidden=false;
-      status.textContent='Print pronta. Ao analisar, a imagem é enviada ao serviço de IA. A análise e a pesquisa usam a API paga configurada no Supabase.';
+      status.textContent='Print pronta. A imagem é analisada no teu computador pelo Ollama, sem API paga. Só o nome identificado é enviado ao motor de pesquisa na internet.';
     }catch(e){image=null;status.textContent=e.message;}finally{selecting=false;analyze.disabled=false;}
   }
   input.onchange=()=>select(input.files[0]);
@@ -37,8 +40,11 @@ export function startAI({client, getState, addProducts, setBusy}) {
     if(!dataUrl || !image){status.textContent='Carrega primeiro uma print.';return;}
     working=true;setBusy(true);analyze.disabled=true;input.disabled=true;results.replaceChildren();status.textContent='A analisar fotografias, preço e nome na internet…';
     try {
-      const {data,error}=await client.functions.invoke('magus-analyze',{body:{image:dataUrl}});
-      if(error) {let detail;try{detail=(await error.context.json()).error;}catch{}throw Error(detail||'Não foi possível analisar. Confirma a configuração da função magus-analyze no Supabase.');}
+      const session=await client.auth.getSession();
+      if(!session.data.session)throw Error('Inicia sessão para usar a IA.');
+      const response=await fetch('/api/ai/analyze',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.data.session.access_token},body:JSON.stringify({image:dataUrl})});
+      const data=await response.json();
+      if(!response.ok)throw Error(data.error||'Não foi possível analisar. Confirma que o Ollama está aberto.');
       const analysis=validateAnalysis(data,getState().catalog.categories);
       const drafts=[];
       for(const p of analysis.products){

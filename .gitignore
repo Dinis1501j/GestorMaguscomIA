@@ -6,3 +6,4 @@ dist/
 backup/
 .DS_Store
 supabase/.temp/
+.local-ai/

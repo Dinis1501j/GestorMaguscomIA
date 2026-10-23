@@ -2,7 +2,7 @@
 
 ## Assistente IA acrescentado
 
-O gestor manual foi preservado e ganhou a área **Importar produtos com IA**. A função `magus-analyze` e os limites de utilização foram instalados no Supabase. Falta configurar a chave da API de IA e concluir um teste com uma print real. Consulta [ATIVAR-IA.md](ATIVAR-IA.md) para configuração e reinstalação.
+O gestor manual foi preservado e ganhou a área **Importar produtos com IA**, com análise gratuita no teu computador através do Ollama. Consulta [IA-LOCAL.md](IA-LOCAL.md) para instalação e utilização. Não precisa de chave ou saldo OpenAI. O catálogo e as fotografias continuam a ser publicados no Supabase existente.
 
 Site estático em HTML, CSS e JavaScript. Não necessita de dependências npm.
 
