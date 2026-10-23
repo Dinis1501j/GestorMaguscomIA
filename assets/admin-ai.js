@@ -1,5 +1,6 @@
 import {el} from './shared.js';
 import {validateAnalysis} from './ai-contract.js';
+import {refinePhotoColumns} from './ai-crops.js';
 
 export function startAI({client, getState, addProducts, setBusy}) {
   const panel = el('section', {class:'ai-panel'});
@@ -46,9 +47,11 @@ export function startAI({client, getState, addProducts, setBusy}) {
       const data=await response.json();
       if(!response.ok)throw Error(data.error||'Não foi possível analisar. Confirma que o Ollama está aberto.');
       const analysis=validateAnalysis(data,getState().catalog.categories);
+      if(analysis.products.length===1){const canvas=document.createElement('canvas'),scale=Math.min(1,600/image.naturalWidth);canvas.width=Math.round(image.naturalWidth*scale);canvas.height=Math.round(image.naturalHeight*scale);const ctx=canvas.getContext('2d');ctx.drawImage(image,0,0,canvas.width,canvas.height);analysis.products[0].photos=refinePhotoColumns(ctx.getImageData(0,0,canvas.width,canvas.height),analysis.products[0].photos);}
       const drafts=[];
       for(const p of analysis.products){
         const card=el('fieldset',{class:'ai-card'});card.append(el('legend',{},'Produto identificado'));
+        const include=el('input',{type:'checkbox',checked:true}),includeLabel=el('label',{},'Adicionar este produto');includeLabel.append(include);card.append(includeLabel);
         const name=el('input',{value:p.name,maxlength:180}),price=el('input',{value:p.price,maxlength:60}),category=el('select');
         for(const c of getState().catalog.categories) category.append(el('option',{value:c.id},c.name));category.value=p.category;
         for(const [title,control] of [['Nome',name],['Preço',price],['Categoria',category]]){const label=el('label',{},title);label.append(control);card.append(label);}
@@ -62,11 +65,11 @@ export function startAI({client, getState, addProducts, setBusy}) {
           for(const [key,title] of [['x','Esquerda %'],['y','Topo %'],['width','Largura %'],['height','Altura %']]){const label=el('label',{},title),control=el('input',{type:'number',min:0,max:100,step:0.1,value:Math.round(r[key]*1000)/10});controls[key]=control;control.oninput=render;label.append(control);row.append(label);}
           render();photos.push({keep,img});card.append(row);
         }
-        drafts.push({name,price,category,photos});results.append(card);
+        drafts.push({name,price,category,photos,include});results.append(card);
       }
       if(Array.isArray(data.sources))for(const source of data.sources){try{const url=new URL(source.url);if(url.protocol==='https:'||url.protocol==='http:')results.append(el('a',{href:url.href,target:'_blank',rel:'noopener noreferrer'},source.title||url.hostname),el('br'));}catch{}}
       const add=el('button',{type:'button',class:'button'},'Adicionar ao gestor para publicar');
-      add.onclick=()=>{try{const products=drafts.map(d=>{const photos=d.photos.filter(p=>p.keep.checked).map(p=>p.img.getAttribute('src')).filter(Boolean);if(!d.name.value.trim()||!d.price.value.trim()||!photos.length)throw Error('Preenche nome e preço e inclui pelo menos uma fotografia por produto.');return {name:d.name.value.trim(),price:d.price.value.trim(),category:d.category.value,photos};});addProducts(products);results.replaceChildren();status.textContent='Produtos adicionados ao gestor. Podes corrigir todos os dados e usar “Publicar alterações”.';}catch(e){status.textContent=e.message;}};
+      add.onclick=()=>{try{const products=drafts.filter(d=>d.include.checked).map(d=>{const photos=d.photos.filter(p=>p.keep.checked).map(p=>p.img.getAttribute('src')).filter(Boolean);if(!d.name.value.trim()||!d.price.value.trim()||!photos.length)throw Error('Preenche nome e preço e inclui pelo menos uma fotografia por produto.');return {name:d.name.value.trim(),price:d.price.value.trim(),category:d.category.value,photos};});if(!products.length)throw Error('Seleciona pelo menos um produto para adicionar.');addProducts(products);results.replaceChildren();status.textContent='Produtos adicionados ao gestor. Podes corrigir todos os dados e usar “Publicar alterações”.';}catch(e){status.textContent=e.message;}};
       results.append(add);status.textContent='Análise concluída. Revê os dados, as fontes e os recortes. Preço ilegível fica como ??€; preços da internet não substituem o teu preço.';
     }catch(e){status.textContent=e.message;}finally{working=false;setBusy(false);analyze.disabled=false;input.disabled=false;}
   };

@@ -6,6 +6,7 @@ import {analyzeLocally} from './local-ai.js';
 import {onlineSettings} from '../assets/online-settings.js';
 const catalog=JSON.parse(await fs.readFile(new URL('../data/catalog.json',import.meta.url),'utf8'));
 const fixture=process.argv[2];
+process.env.MAGUS_AI_DEBUG='1';
 const bytes=await fs.readFile(fixture||new URL('../portachavepokebola.jpeg',import.meta.url));
 const fetcher=async(url,options)=>{
   if(String(url).startsWith(onlineSettings.supabaseUrl)) {

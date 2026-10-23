@@ -9,7 +9,7 @@ O modo principal usa Ollama no teu computador. Não precisa de chave nem de sald
 3. Abre o Ollama e `Abrir-gestor.cmd` nesta pasta.
 4. Abre o endereço do gestor, inicia sessão com a tua conta administradora do Supabase e carrega ou cola uma print na área de IA.
 5. Espera pela análise. A primeira pode demorar mais, enquanto o modelo carrega. O gestor aceita uma análise de cada vez.
-6. Revê nome, preço, categoria e fotografias. Ajusta os recortes em percentagem e retira imagens indesejadas. Adiciona ao gestor e usa **Publicar alterações**.
+6. Revê nome, preço, categoria e fotografias. Os recortes de fotografias lado a lado com margens claras são ajustados às margens detetadas. Podes corrigir os recortes em percentagem, retirar imagens e desmarcar produtos indesejados. Adiciona ao gestor e usa **Publicar alterações**.
 
 Não é preciso criar outro Supabase: o gestor usa o catálogo e as permissões existentes. Publicar afeta o catálogo partilhado pelos dois repositórios. A nova área acrescenta produtos; as correções continuam no gestor manual.
 
@@ -22,6 +22,12 @@ O preço vem apenas da print. Se não for legível, fica `??€`. A pesquisa nã
 As fotografias recortadas só são enviadas para o Supabase ao publicar. A print original não é enviada ao serviço de IA em nuvem. O computador precisa de internet para iniciar sessão, consultar categorias, pesquisar nomes e publicar.
 
 O modelo pode ser alterado com a variável de ambiente `MAGUS_LOCAL_MODEL`, antes de iniciar o servidor. Tem de suportar imagens e respostas JSON. O endereço do Ollama fica fixo no computador local.
+
+## Validação
+
+`npm test` executa os testes de contratos, recortes, autorização, pesquisa e servidor sem consumir IA. O teste real opcional `node tools/smoke-local-ai.js` usa uma fotografia do projeto no modelo instalado e pesquisa nomes na internet; não publica no Supabase. Também aceita o caminho de uma print: `node tools/smoke-local-ai.js caminho/print.jpeg`.
+
+Em 23/10/2026, o teste real com uma print de três fotografias e preço de 12 € devolveu um produto, três fotografias, categoria Porta-Chaves e preço `12€`, com fontes de pesquisa. O mesmo fluxo foi verificado no gestor com uma sessão real do Supabase, sem publicar o produto de teste. Os dez testes automáticos passaram. O tempo e a qualidade variam com o computador e a print; confirma sempre os resultados.
 
 ## Problemas frequentes
 
