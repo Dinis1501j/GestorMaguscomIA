@@ -5,7 +5,7 @@ O modo principal usa Ollama no teu computador. Não precisa de chave nem de sald
 ## Preparar
 
 1. Instala o Ollama a partir de https://ollama.com/download/windows.
-2. Num terminal executa `ollama pull qwen3-vl:4b-instruct` (modelo com cerca de 3,3 GB, além da instalação).
+2. Num terminal executa `ollama pull qwen3-vl:2b-instruct` (modelo com cerca de 1,9 GB, além da instalação).
 3. Abre o Ollama e `Abrir-gestor.cmd` nesta pasta.
 4. Abre o endereço do gestor, inicia sessão com a tua conta administradora do Supabase e carrega ou cola uma print na área de IA.
 5. Espera pela análise. A primeira pode demorar mais, enquanto o modelo carrega. O gestor aceita uma análise de cada vez.
@@ -31,4 +31,4 @@ O modelo pode ser alterado com a variável de ambiente `MAGUS_LOCAL_MODEL`, ante
 - **Sem resultados online:** o motor de pesquisa pode bloquear pedidos automáticos. Revê o nome manualmente nas fontes disponíveis.
 - **IA gratuita indisponível no site online:** abre o gestor local. O gestor manual online continua funcional.
 
-Referências: [visão no Ollama](https://docs.ollama.com/capabilities/vision), [respostas estruturadas](https://docs.ollama.com/capabilities/structured-outputs) e [modelo](https://ollama.com/library/qwen3-vl:4b-instruct).
+Referências: [visão no Ollama](https://docs.ollama.com/capabilities/vision), [respostas estruturadas](https://docs.ollama.com/capabilities/structured-outputs) e [modelo](https://ollama.com/library/qwen3-vl:2b-instruct).

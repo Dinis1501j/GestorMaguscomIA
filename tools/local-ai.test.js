@@ -9,7 +9,7 @@ function mock({admin=true,installed=true,search=true}={}){
   url=String(url);calls.push({url,options});let body;
   if(url.endsWith('/auth/v1/user'))body={id:'test-user'};
   else if(url.endsWith('/rpc/magus_is_admin'))body=admin;
-  else if(url.endsWith('/api/tags'))body={models:installed?[{name:'qwen3-vl:4b-instruct'}]:[]};
+  else if(url.endsWith('/api/tags'))body={models:installed?[{name:'qwen3-vl:2b-instruct'}]:[]};
   else if(url.includes('/rest/v1/magus_content'))body=[{catalog:{categories:[{id:'dragoes',name:'Dragões'}]}}];
   else if(url.endsWith('/api/chat'))body={message:{content:JSON.stringify(chats++?{name:'Dragão articulado',notes:'Nome descritivo.'}:{products:[structuredClone(product)]})}};
   else if(url.startsWith('https://html.duckduckgo.com/'))return new Response(search?'<a class="result__a" href="https://example.com/dragao">Dragão articulado</a>':'captcha');

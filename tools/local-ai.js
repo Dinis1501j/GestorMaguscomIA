@@ -1,7 +1,7 @@
 import {onlineSettings} from '../assets/online-settings.js';
 import {validateAnalysis} from '../assets/ai-contract.js';
 
-const model=process.env.MAGUS_LOCAL_MODEL||'qwen3-vl:4b-instruct';
+const model=process.env.MAGUS_LOCAL_MODEL||'qwen3-vl:2b-instruct';
 const ollama='http://127.0.0.1:11434';
 const clean=html=>html.replace(/<[^>]*>/g,' ').replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;|&#x27;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/\s+/g,' ').trim();
 
@@ -46,8 +46,8 @@ export async function analyzeLocally({image,authorization},fetcher=fetch) {
   const schema={type:'object',required:['products'],properties:{products:{type:'array',items:product,minItems:1,maxItems:12}}};
   async function chat(messages,format) {
     let response;
-    try{response=await fetcher(ollama+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model,messages,format,stream:false,keep_alive:'10m',options:{temperature:0,num_ctx:8192,num_predict:4096}}),signal:AbortSignal.timeout(300000)});}catch{throw Error('A IA local não respondeu. Confirma que o Ollama está aberto e tenta uma print mais pequena.');}
-    if(!response.ok)throw Error('O modelo local não conseguiu analisar. Confirma a memória disponível e o modelo no Ollama.');
+    try{response=await fetcher(ollama+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model,messages,format,stream:false,keep_alive:'10m',options:{temperature:0,num_ctx:4096,num_predict:2048,...(process.env.MAGUS_GPU_LAYERS?{num_gpu:Number(process.env.MAGUS_GPU_LAYERS)}:{})}}),signal:AbortSignal.timeout(300000)});}catch{throw Error('A IA local não respondeu. Confirma que o Ollama está aberto e tenta uma print mais pequena.');}
+    if(!response.ok){let detail='';try{const data=await response.json();if(typeof data.error==='string')detail=' '+data.error.slice(0,400);}catch{}throw Error('O modelo local não conseguiu analisar. Confirma a memória disponível e o modelo no Ollama.'+detail);}
     const result=JSON.parse(await boundedText(response));
     try{return JSON.parse(result.message.content);}catch{throw Error('A IA não devolveu dados válidos. Tenta uma print mais nítida.');}
   }

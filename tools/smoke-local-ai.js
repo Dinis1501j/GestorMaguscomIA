@@ -5,7 +5,8 @@ import assert from 'node:assert/strict';
 import {analyzeLocally} from './local-ai.js';
 import {onlineSettings} from '../assets/online-settings.js';
 const catalog=JSON.parse(await fs.readFile(new URL('../data/catalog.json',import.meta.url),'utf8'));
-const bytes=await fs.readFile(new URL('../portachavepokebola.jpeg',import.meta.url));
+const fixture=process.argv[2];
+const bytes=await fs.readFile(fixture||new URL('../portachavepokebola.jpeg',import.meta.url));
 const fetcher=async(url,options)=>{
   if(String(url).startsWith(onlineSettings.supabaseUrl)) {
     const data=String(url).endsWith('/auth/v1/user')?{id:'smoke-test'}:String(url).endsWith('/rpc/magus_is_admin')?true:[{catalog}];
@@ -14,7 +15,7 @@ const fetcher=async(url,options)=>{
   return fetch(url,options);
 };
 const start=Date.now();
-const result=await analyzeLocally({image:'data:image/jpeg;base64,'+bytes.toString('base64'),authorization:'Bearer test-only'},fetcher);
+const result=await analyzeLocally({image:'data:image/'+(fixture?.endsWith('.png')?'png':'jpeg')+';base64,'+bytes.toString('base64'),authorization:'Bearer test-only'},fetcher);
 assert.ok(result.products.length);
-assert.ok(result.products.every(p=>p.price==='??€'),'There is no visible price in this photo.');
+if(!fixture)assert.ok(result.products.every(p=>p.price==='??€'),'There is no visible price in this photo.');
 console.log(JSON.stringify({seconds:Math.round((Date.now()-start)/1000),products:result.products,sources:result.sources},null,2));
