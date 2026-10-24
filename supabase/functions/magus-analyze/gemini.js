@@ -26,11 +26,17 @@ export async function analyzeGemini({image,categories,key},fetcher=fetch){
   const model='gemini-3.5-flash-lite';
   async function generate(parts,schema,instructions,timeout){
     let response;
-    try{response=await fetcher('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent',{method:'POST',headers:{'x-goog-api-key':key,'Content-Type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:instructions}]},contents:[{role:'user',parts}],generationConfig:{temperature:0.1,maxOutputTokens:5000,responseFormat:{text:{mimeType:'APPLICATION_JSON',schema}}}}),signal:AbortSignal.timeout(timeout)});}catch{throw new AnalysisError('O serviço de IA não respondeu a tempo. Tenta novamente.',504);}
+    try{response=await fetcher('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent',{method:'POST',headers:{'x-goog-api-key':key,'Content-Type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:instructions}]},contents:[{role:'user',parts}],generationConfig:{temperature:0.1,maxOutputTokens:5000,responseMimeType:'application/json',responseJsonSchema:schema}}),signal:AbortSignal.timeout(timeout)});}catch{throw new AnalysisError('O serviço de IA não respondeu a tempo. Tenta novamente.',504);}
     if(response.status===429)throw new AnalysisError('A quota gratuita da IA foi atingida. Tenta mais tarde; não foi ativado nenhum serviço pago.',429);
     if(response.status===401||response.status===403)throw new AnalysisError('A chave Gemini não tem acesso. Confirma a chave, a elegibilidade da conta e o plano gratuito no Google AI Studio.',503);
     if(response.status===404)throw new AnalysisError('O modelo Gemini não está disponível neste projeto. Confirma o acesso no Google AI Studio.',503);
-    if(!response.ok)throw new AnalysisError('O serviço de IA está indisponível. Tenta novamente mais tarde.',502);
+    if(!response.ok){
+      let failure;try{failure=JSON.parse(await readLimited(response,64000));}catch{}
+      const reason=String(failure?.error?.message||'').split(key).join('[redacted]').slice(0,500);
+      console.warn('Gemini request rejected',JSON.stringify({status:response.status,code:failure?.error?.status,reason}));
+      if(/API.?key.*(?:not valid|invalid)|API_KEY_INVALID/i.test(reason))throw new AnalysisError('A chave Gemini guardada não é válida. Confirma que copiaste a chave completa do Google AI Studio para GEMINI_API_KEY, sem espaços.',503);
+      throw new AnalysisError('O serviço de IA está indisponível. Tenta novamente mais tarde.',502);
+    }
     let payload;try{payload=JSON.parse(await readLimited(response,2*1024*1024));}catch{throw new AnalysisError('A IA devolveu uma resposta inválida. Tenta uma print mais simples.',502);}
     const candidate=payload.candidates?.[0];
     if(!candidate||candidate.finishReason!=='STOP')throw new AnalysisError('A IA não conseguiu concluir esta análise. Tenta uma print mais nítida com menos produtos.',422);

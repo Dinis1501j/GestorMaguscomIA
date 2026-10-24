@@ -22,6 +22,7 @@ test('online Gemini keeps three photos and price while researching only textual 
   const mocked=providerMock(),result=await analyzeGemini({image,categories,key:'test-secret'},mocked.fetcher);
   assert.equal(result.products[0].name,'Porta-chaves Poké Bola');assert.equal(result.products[0].price,'12€');assert.equal(result.products[0].photos.length,3);assert.equal(result.sources.length,1);
   assert.equal(mocked.calls.length,3);const initial=JSON.parse(mocked.calls[0].options.body);assert.equal(initial.contents[0].parts[1].inlineData.data,'aGVsbG8=');assert.ok(!initial.tools);
+  assert.equal(initial.generationConfig.responseMimeType,'application/json');assert.ok(initial.generationConfig.responseJsonSchema);
   const search=mocked.calls.find(c=>c.url.includes('duckduckgo'));assert.ok(!search.url.includes('aGVsbG8'));assert.ok(!JSON.stringify(search.options).includes('test-secret'));
   assert.ok(mocked.calls.every(c=>!c.url.includes('test-secret')));
 });
