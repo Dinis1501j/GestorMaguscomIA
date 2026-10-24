@@ -1,71 +1,65 @@
 import {el} from './shared.js';
-import {validateAnalysis} from './ai-contract.js';
-import {refinePhotoColumns} from './ai-crops.js';
+import {validateIdentification} from './ai-identification.js';
 
-export function startAI({client, getState, addProducts, setBusy}) {
-  const panel = el('section', {class:'ai-panel'});
-  const heading = el('h2', {}, 'Importar produtos com IA');
-  const intro = el('p', {}, 'Carrega ou cola uma print. A IA online lê o preço, pesquisa o nome e separa as fotografias do mesmo produto. Revê os recortes e os dados antes de adicionar.');
-  const input = el('input', {type:'file', accept:'image/jpeg,image/png,image/webp', 'aria-label':'Print do produto'});
-  const analyze = el('button', {type:'button',class:'button'}, 'Analisar print');
-  const status = el('p', {role:'status','aria-live':'polite'});
-  const results = el('div');
-  const preview = el('img', {alt:'Print a analisar',class:'ai-preview',hidden:true});
-  panel.append(heading,intro,input,preview,analyze,status,results);
+export function startAI({client,getState,addProducts,setBusy}){
+  const panel=el('section',{class:'ai-panel'}),input=el('input',{type:'file',accept:'image/jpeg,image/png,image/webp',multiple:'', 'aria-label':'Fotos do produto'}),preview=el('div',{class:'ai-previews'}),analyze=el('button',{type:'button',class:'button'},'Identificar produto com IA'),status=el('p',{role:'status','aria-live':'polite'}),results=el('div');
+  const separate=el('input',{type:'checkbox'}),separateLabel=el('label',{},'São produtos diferentes (um produto por foto; uma análise por foto)');separateLabel.prepend(separate);
+  panel.append(el('h2',{},'Identificar produto com IA'),el('p',{},'Escolhe uma ou mais fotos do mesmo produto, de ângulos diferentes. A IA sugere o nome em inglês, o tipo de produto e a série ou franquia. Revê os campos antes de adicionar. O gestor manual continua disponível.'),input,separateLabel,preview,analyze,status,results);
   document.querySelector('#editor .toolbar').after(panel);
-  let image, dataUrl, working=false, selecting=false;
-  status.textContent='Carrega ou cola uma print para começar. Não é necessário instalar programas.';
-  async function select(file) {
-    if(working||selecting)return;
-    selecting=true;analyze.disabled=true;
-    results.replaceChildren(); image=null; dataUrl=null; preview.hidden=true;
-    try {
-      if(!file || !['image/jpeg','image/png','image/webp'].includes(file.type) || file.size>10*1024*1024) throw Error('Escolhe uma print JPEG, PNG ou WebP até 10 MB.');
-      const url=URL.createObjectURL(file);
-      try {image=new Image();image.src=url;await image.decode();} finally {URL.revokeObjectURL(url);}
-      if(image.naturalWidth*image.naturalHeight>40000000)throw Error('A imagem é demasiado grande. Reduz a resolução.');
-      const canvas=document.createElement('canvas'),scale=Math.min(1,2200/Math.max(image.naturalWidth,image.naturalHeight));
-      canvas.width=Math.round(image.naturalWidth*scale);canvas.height=Math.round(image.naturalHeight*scale);
-      canvas.getContext('2d').drawImage(image,0,0,canvas.width,canvas.height);
-      dataUrl=canvas.toDataURL('image/jpeg',0.9);preview.src=dataUrl;preview.hidden=false;
-      status.textContent='Print pronta. Ao analisar, a imagem é enviada ao Gemini através do Supabase. O plano gratuito tem limites; só o nome identificado é enviado à pesquisa pública.';
-    }catch(e){image=null;status.textContent=e.message;}finally{selecting=false;analyze.disabled=false;}
-  }
-  input.onchange=()=>select(input.files[0]);
-  panel.tabIndex=0;
-  panel.addEventListener('paste',e=>{const file=[...e.clipboardData.items].find(i=>i.kind==='file')?.getAsFile();if(file){e.preventDefault();select(file);}});
-  analyze.onclick=async()=>{
-    if(working)return;
-    if(!dataUrl || !image){status.textContent='Carrega primeiro uma print.';return;}
-    working=true;setBusy(true);analyze.disabled=true;input.disabled=true;results.replaceChildren();status.textContent='A analisar fotografias, preço e nome na internet…';
-    try {
-      const {data,error}=await client.functions.invoke('magus-analyze',{body:{image:dataUrl}});
-      if(error){let detail;try{detail=(await error.context.json()).error;}catch{}throw Error(detail||'Não foi possível contactar a IA online. Confirma a sessão e a ligação à internet.');}
-      const analysis=validateAnalysis(data,getState().catalog.categories);
-      if(analysis.products.length===1){const canvas=document.createElement('canvas'),scale=Math.min(1,600/image.naturalWidth);canvas.width=Math.round(image.naturalWidth*scale);canvas.height=Math.round(image.naturalHeight*scale);const ctx=canvas.getContext('2d');ctx.drawImage(image,0,0,canvas.width,canvas.height);analysis.products[0].photos=refinePhotoColumns(ctx.getImageData(0,0,canvas.width,canvas.height),analysis.products[0].photos);}
-      const drafts=[];
-      for(const p of analysis.products){
-        const card=el('fieldset',{class:'ai-card'});card.append(el('legend',{},'Produto identificado'));
-        const include=el('input',{type:'checkbox',checked:true}),includeLabel=el('label',{},'Adicionar este produto');includeLabel.append(include);card.append(includeLabel);
-        const name=el('input',{value:p.name,maxlength:180}),price=el('input',{value:p.price,maxlength:60}),category=el('select');
-        for(const c of getState().catalog.categories) category.append(el('option',{value:c.id},c.name));category.value=p.category;
-        for(const [title,control] of [['Nome',name],['Preço',price],['Categoria',category]]){const label=el('label',{},title);label.append(control);card.append(label);}
-        card.append(el('p',{},p.notes||'Confirma o nome, o preço e os recortes.'));
-        const photos=[];
-        for(const r of p.photos){
-          const row=el('div',{class:'ai-photo'}),img=el('img',{alt:'Fotografia recortada'}),keep=el('input',{type:'checkbox',checked:true});
-          const controls={};
-          const render=()=>{const crop={};for(const key of ['x','y','width','height'])crop[key]=Number(controls[key].value)/100;const canvas=document.createElement('canvas');const x=Math.round(crop.x*image.naturalWidth),y=Math.round(crop.y*image.naturalHeight),w=Math.min(image.naturalWidth-x,Math.round(crop.width*image.naturalWidth)),h=Math.min(image.naturalHeight-y,Math.round(crop.height*image.naturalHeight));if(w<1||h<1){img.removeAttribute('src');return;}const scale=Math.min(1,1600/Math.max(w,h));canvas.width=Math.max(1,Math.round(w*scale));canvas.height=Math.max(1,Math.round(h*scale));canvas.getContext('2d').drawImage(image,x,y,w,h,0,0,canvas.width,canvas.height);img.src=canvas.toDataURL('image/jpeg',0.92);};
-          const label=el('label',{},'Incluir fotografia');label.append(keep);row.append(img,label);
-          for(const [key,title] of [['x','Esquerda %'],['y','Topo %'],['width','Largura %'],['height','Altura %']]){const label=el('label',{},title),control=el('input',{type:'number',min:0,max:100,step:0.1,value:Math.round(r[key]*1000)/10});controls[key]=control;control.oninput=render;label.append(control);row.append(label);}
-          render();photos.push({keep,img});card.append(row);
-        }
-        drafts.push({name,price,category,photos,include});results.append(card);
+  let images=[],working=false;
+  async function select(files){
+    if(working)return;working=true;analyze.disabled=true;input.disabled=true;images=[];results.replaceChildren();preview.replaceChildren();
+    try{
+      if(!files.length||files.length>8)throw Error('Escolhe entre uma e oito fotos do mesmo produto.');
+      const prepared=[];
+      for(const file of files){
+        if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>10*1024*1024)throw Error('Usa JPEG, PNG ou WebP até 10 MB por foto.');
+        const url=URL.createObjectURL(file),image=new Image();
+        try{image.src=url;await image.decode();}finally{URL.revokeObjectURL(url);}
+        if(image.naturalWidth*image.naturalHeight>40000000)throw Error('Reduz a resolução da fotografia.');
+        const canvas=document.createElement('canvas'),scale=Math.min(1,1600/Math.max(image.naturalWidth,image.naturalHeight));
+        canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));canvas.getContext('2d').drawImage(image,0,0,canvas.width,canvas.height);
+        prepared.push(canvas.toDataURL('image/jpeg',0.85));
       }
-      if(Array.isArray(data.sources))for(const source of data.sources){try{const url=new URL(source.url);if(url.protocol==='https:'||url.protocol==='http:')results.append(el('a',{href:url.href,target:'_blank',rel:'noopener noreferrer'},source.title||url.hostname),el('br'));}catch{}}
-      const add=el('button',{type:'button',class:'button'},'Adicionar ao gestor para publicar');
-      add.onclick=()=>{try{const products=drafts.filter(d=>d.include.checked).map(d=>{const photos=d.photos.filter(p=>p.keep.checked).map(p=>p.img.getAttribute('src')).filter(Boolean);if(!d.name.value.trim()||!d.price.value.trim()||!photos.length)throw Error('Preenche nome e preço e inclui pelo menos uma fotografia por produto.');return {name:d.name.value.trim(),price:d.price.value.trim(),category:d.category.value,photos};});if(!products.length)throw Error('Seleciona pelo menos um produto para adicionar.');addProducts(products);results.replaceChildren();status.textContent='Produtos adicionados ao gestor. Podes corrigir todos os dados e usar “Publicar alterações”.';}catch(e){status.textContent=e.message;}};
-      results.append(add);status.textContent='Análise concluída. Revê os dados, as fontes e os recortes. Preço ilegível fica como ??€; preços da internet não substituem o teu preço.';
-    }catch(e){status.textContent=e.message;}finally{working=false;setBusy(false);analyze.disabled=false;input.disabled=false;}
+      if(prepared.reduce((n,s)=>n+s.length,0)>7*1024*1024)throw Error('As fotos são demasiado grandes. Reduz a resolução ou envia menos fotos.');
+      images=prepared;for(const [i,src] of images.entries())preview.append(el('img',{src,alt:'Ângulo '+(i+1),class:'ai-preview'}));
+      status.textContent=images.length+' foto(s) do mesmo produto prontas. São enviadas ao Gemini através do Supabase ao analisar.';
+    }catch(e){status.textContent=e.message;}finally{working=false;analyze.disabled=false;input.disabled=false;}
+  }
+  input.onchange=()=>select([...input.files]);
+  panel.tabIndex=0;panel.addEventListener('paste',e=>{const files=[...e.clipboardData.items].filter(i=>i.kind==='file').map(i=>i.getAsFile()).filter(Boolean);if(files.length){e.preventDefault();select(files);}});
+  analyze.onclick=async()=>{
+    if(working)return;if(!images.length){status.textContent='Escolhe primeiro as fotos do produto.';return;}
+    working=true;analyze.disabled=true;input.disabled=true;separate.disabled=true;setBusy(true);results.replaceChildren();status.textContent='A identificar o produto e a franquia…';
+    try{
+      const groups=separate.checked?images.map(image=>[image]):[[...images]];
+      const drafts=[];
+      for(const photos of groups){
+      const {data,error}=await client.functions.invoke('magus-analyze',{body:{task:'identify',images:photos}});
+      if(error){let detail;try{detail=(await error.context.json()).error;}catch{}throw Error(detail||'Não foi possível contactar a IA.');}
+      const state=getState(),subcategories=[...new Set(state.catalog.products.map(p=>p.subcategory).filter(Boolean))];
+      const p=validateIdentification(data,state.catalog.categories,subcategories).produtos[0];
+      drafts.push({p,photos,state,subcategories});
+      }
+      for(const [index,{p,photos,state,subcategories}] of drafts.entries()){
+      const card=el('fieldset',{class:'ai-card'});card.append(el('legend',{},'Sugestão — um único produto'));
+      const name=el('input',{value:p.nome,maxlength:180}),category=el('select'),subcategory=el('input',{value:p.subcategoria,maxlength:180,list:'ai-existing-subcategories-'+index}),price=el('input',{value:'??€',maxlength:60}),list=el('datalist',{id:'ai-existing-subcategories-'+index});
+      category.append(el('option',{value:''},'Seleciona uma categoria'));
+      for(const c of state.catalog.categories)category.append(el('option',{value:c.id},c.name));
+      category.value=state.catalog.categories.find(c=>c.name===p.categoria)?.id||'';
+      for(const s of subcategories)list.append(el('option',{value:s}));
+      for(const [title,control] of [['Nome em inglês',name],['Categoria (tipo de produto)',category],['Subcategoria (série, filme, anime ou jogo)',subcategory],['Preço — preencher manualmente',price]]){const label=el('label',{},title);label.append(control);card.append(label);}
+      card.append(list,el('p',{},'Campos vazios indicam incerteza ou ausência de uma categoria adequada. Confirma a identificação. Todas as fotos serão associadas a este produto.'));
+      const add=el('button',{type:'button',class:'button'},'Adicionar ao gestor para rever');
+      add.onclick=()=>{
+        if(!name.value.trim()||!category.value||!price.value.trim()){status.textContent='Preenche o nome, a categoria e o preço (ou ??€) antes de adicionar.';return;}
+        if(!getState().catalog.categories.some(c=>c.id===category.value)){status.textContent='A categoria já não existe. Volta a analisar.';return;}
+        addProducts([{name:name.value.trim(),category:category.value,subcategory:subcategory.value.trim(),price:price.value.trim(),photos}]);
+        card.remove();add.remove();status.textContent='Produto adicionado ao gestor para revisão. Usa “Publicar alterações” quando terminares.';
+      };
+      results.append(card,add);
+      }
+      status.textContent='Identificação concluída. Revê e corrige os campos; nada foi guardado ou publicado.';
+    }catch(e){status.textContent=e.message;}finally{working=false;setBusy(false);analyze.disabled=false;input.disabled=false;separate.disabled=false;}
   };
 }

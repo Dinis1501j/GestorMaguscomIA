@@ -1,4 +1,5 @@
 import {analyzeGemini,AnalysisError,readLimited} from './gemini.js';
+import {identifyProduct,validateImages} from './identify.js';
 
 export function createAnalyzeHandler({createClient,env,fetcher=fetch}){
   return async req=>{
@@ -17,12 +18,17 @@ export function createAnalyzeHandler({createClient,env,fetcher=fetch}){
       const key=env('GEMINI_API_KEY');if(!key)return reply(503,{error:'A IA online ainda não foi ativada. Falta configurar GEMINI_API_KEY no Supabase.'});
       if(!req.headers.get('content-type')?.startsWith('application/json'))return reply(415,{error:'Formato de pedido inválido.'});
       let body;try{body=JSON.parse(await readLimited(req));}catch(error){if(error instanceof AnalysisError)throw error;throw new AnalysisError('O pedido não contém JSON válido.');}
-      if(typeof body.image!=='string'||!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/.test(body.image))return reply(400,{error:'Formato de print inválido.'});
+      if(body.task==='identify')validateImages(body.images);
+      else if(typeof body.image!=='string'||!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/.test(body.image))return reply(400,{error:'Formato de print inválido.'});
       const state=await client.from('magus_content').select('catalog').eq('id',1).single();
       const categories=state.data?.catalog?.categories;
       if(state.error||!Array.isArray(categories)||!categories.length)return reply(400,{error:'Cria primeiro uma categoria no gestor.'});
       const quota=await client.rpc('magus_ai_take_slot');if(quota.error)return reply(503,{error:'Falta configurar o limite de análises no Supabase.'});
       if(quota.data!==true)return reply(429,{error:'Limite de 20 análises por hora atingido. Tenta mais tarde.'});
+      if(body.task==='identify'){
+        const subcategories=[...new Set((state.data.catalog.products||[]).map(p=>p.subcategory).filter(s=>typeof s==='string'&&s.trim()))];
+        return reply(200,await identifyProduct({images:body.images,categories,subcategories,multiple:body.multiple===true,key},fetcher));
+      }
       return reply(200,await analyzeGemini({image:body.image,categories,key},fetcher));
     }catch(error){return reply(error instanceof AnalysisError?error.status:500,{error:error instanceof AnalysisError?error.message:'Não foi possível concluir a análise. As alterações existentes não foram publicadas.'});}
   };
