@@ -35,4 +35,6 @@ Os limites e políticas do fornecedor podem mudar. Consulta [preços](https://ai
 
 `npm test` inclui testes da função cloud com respostas simuladas: permissões, CORS, quota, chave em falta, três fotografias, pesquisa indisponível e preço preservado. `npm run check` valida o catálogo e ligações locais. Um teste real requer a chave configurada: testa uma print com várias fotografias e preço legível, e outra sem preço, antes de publicar produtos.
 
+Em 24/10/2026, a chave foi configurada e a função publicada no projeto Supabase atual. O teste real em `https://magusart.pt/admin/` identificou uma peça com três fotografias, categoria Porta-Chaves, preço `12€` e fontes públicas da Wikimedia. Uma fotografia sem preço devolveu `??€`. Os 18 testes automáticos passaram. Os produtos de teste não foram adicionados nem publicados no catálogo.
+
 Os ficheiros de IA local anteriores continuam disponíveis no histórico e em `tools/`, mas o admin atual chama exclusivamente a função online.
