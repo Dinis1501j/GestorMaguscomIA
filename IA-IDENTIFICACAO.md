@@ -10,4 +10,4 @@ Criar, editar e apagar manualmente mantém o funcionamento existente. A integra�
 
 A antiga análise de prints permanece compatível no endpoint através de `{image}`; a nova interface usa `{task: 'identify', images: [...]}`. A configuração de secrets descrita em IA-ONLINE.md mantém-se; a pesquisa pública do modo antigo não é usada na identificação nova.
 
-Validação online em 24/10/2026: três fotografias originaram um único produto, Pokémon Poké Ball Keychain / Porta-Chaves / Pokémon. Confirmada a passagem das três fotos e subcategoria ao editor. Rascunho de teste descartado sem publicar. 22 testes automáticos passaram (incluindo os testes do gestor manual).
+Validação online em 24/10/2026: três fotografias originaram um único produto, Pokémon Poké Ball Keychain / Porta-Chaves / Pokémon. Confirmada a passagem das três fotos e subcategoria ao editor. O teste não foi publicado. A limpeza do rascunho pendente não pôde ser confirmada porque o navegador deixou de responder ao aviso de saída. 22 testes automáticos passaram (incluindo os testes do gestor manual).
