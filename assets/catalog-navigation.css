@@ -1,0 +1,12 @@
+/* Public catalog navigation only. Reuse the existing category cards and palette. */
+body[data-page="catalogo/"] .catalog-breadcrumb{position:static;inset:auto;z-index:auto;display:block;padding:0;margin:0 0 1.2rem;background:none;backdrop-filter:none;transition:none}
+.catalog-breadcrumb ol{display:flex;flex-wrap:wrap;align-items:center;gap:.25rem .5rem;list-style:none}
+.catalog-breadcrumb li{display:flex;align-items:center;min-width:0;max-width:100%}
+.catalog-breadcrumb li+li::before{content:'›';padding-right:.5rem;color:var(--sage-mist)}
+.catalog-breadcrumb a{display:inline-flex;align-items:center;min-height:44px;padding:.5rem .25rem;color:var(--sage-mist);overflow-wrap:anywhere}
+.catalog-breadcrumb a:hover,.catalog-breadcrumb a[aria-current]{color:var(--bone);text-decoration:underline;text-underline-offset:4px}
+body[data-page="catalogo/"] #catalog .back-btn{display:inline-flex;align-items:center;min-height:44px;padding:.65rem 1rem;border:1px solid var(--line);border-radius:4px;margin-bottom:1.5rem}
+body[data-page="catalogo/"] #catalog .category-card{min-height:120px;padding:1rem}
+body[data-page="catalogo/"] #catalog .category-card h3{overflow-wrap:anywhere;max-width:100%}
+#catalog-title{scroll-margin-top:100px}
+@media(max-width:520px){.catalog-breadcrumb ol{gap:0 .25rem}.catalog-breadcrumb a{font-size:.9rem}body[data-page="catalogo/"] #catalog .category-card{aspect-ratio:auto;min-height:150px}}
