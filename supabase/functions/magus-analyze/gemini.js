@@ -26,14 +26,29 @@ export async function analyzeGemini({image,categories,key},fetcher=fetch){
   const model='gemini-3.5-flash-lite';
   async function generate(parts,schema,instructions,timeout){
     let response;
-    try{response=await fetcher('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent',{method:'POST',headers:{'x-goog-api-key':key,'Content-Type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:instructions}]},contents:[{role:'user',parts}],generationConfig:{temperature:0.1,maxOutputTokens:5000,responseMimeType:'application/json',responseJsonSchema:schema}}),signal:AbortSignal.timeout(timeout)});}catch{throw new AnalysisError('O serviço de IA não respondeu a tempo. Tenta novamente.',504);}
+    const requestBody={systemInstruction:{parts:[{text:instructions}]},contents:[{role:'user',parts}],generationConfig:{temperature:0.1,maxOutputTokens:5000,responseMimeType:'application/json',responseJsonSchema:schema}};
+    const send=body=>fetcher('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent',{method:'POST',headers:{'x-goog-api-key':key,'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(Math.min(timeout,30000))});
+    try{
+      response=await send(requestBody);
+      if(response.status===400){
+        let problem;try{problem=await response.clone().json();}catch{}
+        if(problem?.error?.status==='INVALID_ARGUMENT'&&!/API.?key.*(?:not valid|invalid)/i.test(problem.error.message||'')){
+          // Some model revisions reject supported JSON Schema fields. Retry the
+          // same free-tier model in JSON mode, then enforce our own validator.
+          delete requestBody.generationConfig.responseJsonSchema;
+          requestBody.systemInstruction.parts[0].text+=' Devolve apenas JSON segundo este esquema: '+JSON.stringify(schema);
+          response=await send(requestBody);
+        }
+      }
+    }catch{throw new AnalysisError('O serviço de IA não respondeu a tempo. Tenta novamente.',504);}
     if(response.status===429)throw new AnalysisError('A quota gratuita da IA foi atingida. Tenta mais tarde; não foi ativado nenhum serviço pago.',429);
     if(response.status===401||response.status===403)throw new AnalysisError('A chave Gemini não tem acesso. Confirma a chave, a elegibilidade da conta e o plano gratuito no Google AI Studio.',503);
     if(response.status===404)throw new AnalysisError('O modelo Gemini não está disponível neste projeto. Confirma o acesso no Google AI Studio.',503);
     if(!response.ok){
       let failure;try{failure=JSON.parse(await readLimited(response,64000));}catch{}
       const reason=String(failure?.error?.message||'').split(key).join('[redacted]').slice(0,500);
-      console.warn('Gemini request rejected',JSON.stringify({status:response.status,code:failure?.error?.status,reason}));
+      const details=failure?.error?.details?.map(d=>({reason:d.reason,domain:d.domain,fields:d.fieldViolations?.map(v=>({field:v.field,description:String(v.description).split(key).join('[redacted]').slice(0,300)}))}));
+      console.warn('Gemini request rejected',JSON.stringify({status:response.status,code:failure?.error?.status,reason,details}));
       if(/API.?key.*(?:not valid|invalid)|API_KEY_INVALID/i.test(reason))throw new AnalysisError('A chave Gemini guardada não é válida. Confirma que copiaste a chave completa do Google AI Studio para GEMINI_API_KEY, sem espaços.',503);
       throw new AnalysisError('O serviço de IA está indisponível. Tenta novamente mais tarde.',502);
     }

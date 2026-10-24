@@ -39,6 +39,11 @@ test('malformed or invalid input is rejected before producing a draft',async()=>
   mocked=providerMock();await assert.rejects(analyzeGemini({image:'https://evil.example/image',categories,key:'test'},mocked.fetcher),/imagem/);assert.equal(mocked.calls.length,0);
   assert.deepEqual(publicSearchResults('<a class="result__a" href="javascript:alert(1)">Wrong</a>'),[]);
 });
+test('model schema rejection retries only the same model in JSON mode',async()=>{
+  const base=providerMock({search:false});let rejected=false;const calls=[];
+  const fetcher=async(url,options)=>{calls.push({url:String(url),options});if(!rejected&&String(url).includes('googleapis.com')){rejected=true;return new Response(JSON.stringify({error:{status:'INVALID_ARGUMENT',message:'Request contains an invalid argument.'}}),{status:400});}return base.fetcher(url,options);};
+  const result=await analyzeGemini({image,categories,key:'test'},fetcher);assert.equal(result.products[0].price,'12€');const generations=calls.filter(c=>c.url.includes('googleapis.com'));assert.equal(generations.length,2);assert.equal(generations[0].url,generations[1].url);assert.ok(JSON.parse(generations[0].options.body).generationConfig.responseJsonSchema);assert.equal(JSON.parse(generations[1].options.body).generationConfig.responseJsonSchema,undefined);
+});
 function handlerMock({admin=true,quota=true,key='test',authenticated=true}={}){
   const network=providerMock(),rpc=[];
   const client={auth:{getUser:async()=>({data:{user:authenticated?{id:'test-user'}:null}})},rpc:async name=>{rpc.push(name);return {data:name==='magus_is_admin'?admin:quota};},from:()=>({select:()=>({eq:()=>({single:async()=>({data:{catalog:{categories}}})})})})};
