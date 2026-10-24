@@ -1,8 +1,10 @@
 import { partnersOf } from './partner-data.js?v=partners3';
+import { startButtonLogos } from './admin-logos.js';
 import { startAI } from './admin-ai.js?v=identify3';
 import { asset, el, json } from './shared.js';
 import { startLogin } from './admin-login.js';
-import { saveOnlineState } from './online-store.js?v=partners3';
+import { saveOnlineState } from './online-store.js?v=logos1';
+let logoEditor;
 let onlineClient;
 const $ = (s) => document.querySelector(s),
   pf = $('#product-form'),
@@ -131,6 +133,7 @@ function categoryOptions() {
     c?.cover || '',
   );
   removalOptions();
+  logoEditor?.refresh();
 }
 function loadProduct() {
   const p = product();
@@ -175,6 +178,7 @@ pf.addEventListener('input', (e) => {
     changed();
     selectors();
     if (e.target.name === 'category') categoryOptions();
+    if (e.target.name === 'subcategory') logoEditor?.refresh();
   }
 });
 cf.addEventListener('input', (e) => {
@@ -300,6 +304,11 @@ $('#delete-category').onclick = () => {
   if (!confirm(question + ' A alteração só fica visível depois de publicar.')) return;
   for (const p of pieces) p.category = destination.id;
   state.catalog.categories = state.catalog.categories.filter((x) => x.id !== c.id);
+  if (state.catalog.buttonLogos) {
+    state.catalog.buttonLogos = state.catalog.buttonLogos.filter(
+      (entry) => entry.category !== c.id,
+    );
+  }
   currentCategory = destination?.id || state.catalog.categories[0]?.id;
   changed();
   selectors();
@@ -468,6 +477,21 @@ try {
   onlineClient = signed.client;
   state = signed.state;
   state.catalog.partners = partnersOf(state.catalog);
+  logoEditor = startButtonLogos({
+    getState: () => state,
+    getCategory: category,
+    getUploads: () => uploads,
+    imageSource: src,
+    changed,
+    isBusy: () => busy,
+    setBusy: (value) => {
+      busy = value;
+      $('#save').disabled = value;
+      $('.admin-columns').inert = value;
+      const aiPanel = $('.ai-panel');
+      if (aiPanel) aiPanel.inert = value;
+    },
+  });
   currentPartner = state.catalog.partners[0]?.id;
   partnerSelectors();
   loadPartner();

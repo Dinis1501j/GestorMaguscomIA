@@ -1,5 +1,10 @@
 import { validatePartners } from './partner-data.js?v=partners3';
 import { onlineSettings } from './online-settings.js';
+import {
+  logoReferences,
+  replaceLogoReference,
+  validateButtonLogos,
+} from './button-logos.js';
 
 export const onlineEnabled = Boolean(
   onlineSettings.supabaseUrl && onlineSettings.publishableKey,
@@ -81,6 +86,26 @@ export function validateContent(catalog, events) {
   )
     throw Error('Conteúdo inválido.');
   if (catalog.partners !== undefined) validatePartners(catalog.partners);
+  validateButtonLogos(catalog, (image) => {
+    if (typeof image !== 'string') return false;
+    if (
+      /^(?:images\/[a-zA-Z0-9_/-]+|[a-zA-Z0-9_-]+)\.(jpeg|jpg|png|webp)$/.test(image) &&
+      !image.includes('..')
+    )
+      return true;
+    try {
+      const url = new URL(image);
+      return (
+        url.protocol === 'https:' &&
+        url.origin === new URL(onlineSettings.supabaseUrl).origin &&
+        url.pathname.startsWith(
+          '/storage/v1/object/public/' + onlineSettings.bucket + '/',
+        )
+      );
+    } catch {
+      return false;
+    }
+  });
   const cats = new Set();
   const ids = new Set();
   const validId = (id) => typeof id === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id);
@@ -116,6 +141,7 @@ export async function saveOnlineState(client, state, uploads) {
   const refs = new Set([
     ...next.catalog.products.flatMap((p) => p.images),
     ...next.catalog.categories.map((c) => c.cover),
+    ...logoReferences(next.catalog),
   ]);
   for (const upload of uploads.filter((u) => refs.has(u.path))) {
     if (!upload.remoteUrl) {
@@ -145,6 +171,7 @@ export async function saveOnlineState(client, state, uploads) {
       p.images = p.images.map((i) => (i === upload.path ? upload.remoteUrl : i));
     for (const c of next.catalog.categories)
       if (c.cover === upload.path) c.cover = upload.remoteUrl;
+    replaceLogoReference(next.catalog, upload.path, upload.remoteUrl);
   }
   const result = await client.rpc('magus_publish', {
     p_catalog: next.catalog,

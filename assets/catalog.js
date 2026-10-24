@@ -1,4 +1,5 @@
 import { asset, el, json, error } from './shared.js?v=online1';
+import { logosFor } from './button-logos.js';
 const container = document.querySelector('#catalog'),
   title = document.querySelector('#catalog-title'),
   count = document.querySelector('#catalog-count'),
@@ -103,9 +104,17 @@ try {
     fold([p.name, p.subcategory, p.description].join(' ')).includes(
       fold(search.value.trim()),
     );
-  function card(name, href, products, cover) {
-    const link = el('a', { class: 'category-card', href });
-    if (cover)
+  function card(name, href, products, cover, logos = []) {
+    const link = el('a', {
+      class: 'category-card' + (logos.length ? ' has-button-logos' : ''),
+      href,
+    });
+    if (logos.length) {
+      const artwork = el('div', { class: 'button-logos', 'aria-hidden': 'true' });
+      for (const image of logos)
+        artwork.append(el('img', { src: asset(image), alt: '', loading: 'lazy' }));
+      link.append(artwork);
+    } else if (cover)
       link.append(
         el('img', {
           class: 'category-cover',
@@ -197,7 +206,13 @@ try {
       for (const c of visible) {
         const products = c.products.filter(matches);
         grid.append(
-          card(c.name, route(c.id), products, c.cover || products[0]?.images[0]),
+          card(
+            c.name,
+            route(c.id),
+            products,
+            c.cover || products[0]?.images[0],
+            logosFor(data, c.id),
+          ),
         );
       }
       container.append(
@@ -219,7 +234,13 @@ try {
         grid = el('div', { class: 'catalog-grid' });
       for (const s of visible)
         grid.append(
-          card(s.name, route(selected.id, s.id), s.products, s.products[0]?.images[0]),
+          card(
+            s.name,
+            route(selected.id, s.id),
+            s.products,
+            s.products[0]?.images[0],
+            logosFor(data, selected.id, s.key),
+          ),
         );
       container.append(
         visible.length

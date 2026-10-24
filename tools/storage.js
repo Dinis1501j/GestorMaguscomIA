@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { logoReferences, validateButtonLogos } from '../assets/button-logos.js';
 export const revision = (catalog, events) =>
   crypto
     .createHash('sha256')
@@ -23,6 +24,7 @@ export function validate(catalog, events) {
     throw Error('Formato de dados inválido.');
   const categories = new Set(),
     products = new Set();
+  validateButtonLogos(catalog, imagePath);
   for (const c of catalog.categories) {
     if (
       !id(c.id) ||
@@ -121,6 +123,7 @@ export async function saveState(root, body) {
   for (const ref of [
     ...body.catalog.products.flatMap((p) => p.images),
     ...body.catalog.categories.map((c) => c.cover).filter(Boolean),
+    ...logoReferences(body.catalog),
   ])
     if (!incoming.has(ref)) {
       try {
