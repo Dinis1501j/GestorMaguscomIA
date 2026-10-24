@@ -6,11 +6,12 @@ const categories=[{id:'porta-chaves',name:'Porta-Chaves'}];
 const image='data:image/png;base64,aGVsbG8=';
 const product=()=>({name:'Poké Bola',price:'12€',category:'porta-chaves',notes:'',photos:[0,0.33,0.66].map(x=>({x,y:0.1,width:0.3,height:0.8}))});
 const json=data=>new Response(JSON.stringify(data),{headers:{'Content-Type':'application/json'}});
-function providerMock({status=200,search=true,invalid=false,secondaryStatus=200}={}){
+function providerMock({status=200,search=true,wiki=false,invalid=false,secondaryStatus=200}={}){
   const calls=[];let generations=0;
   const fetcher=async(url,options={})=>{
     const address=String(url);calls.push({url:address,options});
     if(address.startsWith('https://html.duckduckgo.com/'))return new Response(search?'<a class="result__a" href="https://example.com/pokeball">Porta-chaves de Poké Bola</a>':'<p>No results</p>');
+    if(address.includes('.wikipedia.org/w/api.php'))return json({query:{search:wiki?[{title:'Poké Ball',snippet:'Objeto da franquia Pokémon.'}]:[]}});
     assert.match(address,/^https:\/\/generativelanguage.googleapis.com\/v1beta\/models\/gemini-3\.5-flash-lite:generateContent$/);
     const second=generations++>0,code=second?secondaryStatus:status;
     if(code!==200)return new Response('{}',{status:code});
@@ -22,7 +23,7 @@ test('online Gemini keeps three photos and price while researching only textual 
   const mocked=providerMock(),result=await analyzeGemini({image,categories,key:'test-secret'},mocked.fetcher);
   assert.equal(result.products[0].name,'Porta-chaves Poké Bola');assert.equal(result.products[0].price,'12€');assert.equal(result.products[0].photos.length,3);assert.equal(result.sources.length,1);
   assert.equal(mocked.calls.length,3);const initial=JSON.parse(mocked.calls[0].options.body);assert.equal(initial.contents[0].parts[1].inlineData.data,'aGVsbG8=');assert.ok(!initial.tools);
-  assert.equal(initial.generationConfig.responseMimeType,'application/json');assert.ok(initial.generationConfig.responseJsonSchema);
+  assert.equal(initial.generationConfig.responseMimeType,'application/json');assert.equal(initial.generationConfig.responseJsonSchema,undefined);assert.match(initial.systemInstruction.parts[0].text,/"products"/);
   const search=mocked.calls.find(c=>c.url.includes('duckduckgo'));assert.ok(!search.url.includes('aGVsbG8'));assert.ok(!JSON.stringify(search.options).includes('test-secret'));
   assert.ok(mocked.calls.every(c=>!c.url.includes('test-secret')));
 });
@@ -31,18 +32,17 @@ test('quota and key errors stop immediately without a paid fallback or secret le
   const mocked=providerMock();await assert.rejects(analyzeGemini({image,categories,key:''},mocked.fetcher),/GEMINI_API_KEY/);assert.equal(mocked.calls.length,0);
 });
 test('search failures and secondary quota retain valid vision results for review',async()=>{
-  let mocked=providerMock({search:false}),result=await analyzeGemini({image,categories,key:'test'},mocked.fetcher);assert.equal(result.products[0].name,'Poké Bola');assert.match(result.products[0].notes,/sem resultados/);assert.equal(mocked.calls.length,2);
+  let mocked=providerMock({search:false}),result=await analyzeGemini({image,categories,key:'test'},mocked.fetcher);assert.equal(result.products[0].name,'Poké Bola');assert.match(result.products[0].notes,/sem resultados/);assert.equal(mocked.calls.filter(c=>c.url.includes('googleapis.com')).length,1);
   mocked=providerMock({secondaryStatus:429});result=await analyzeGemini({image,categories,key:'test'},mocked.fetcher);assert.equal(result.products[0].price,'12€');assert.equal(result.products[0].photos.length,3);assert.match(result.products[0].notes,/revisão manual/);
 });
+test('public Wikimedia fallback confirms identities when general search is unavailable',async()=>{const mocked=providerMock({search:false,wiki:true}),result=await analyzeGemini({image,categories,key:'test'},mocked.fetcher);assert.ok(result.sources.some(s=>s.url.startsWith('https://pt.wikipedia.org/wiki/')));assert.equal(result.products[0].price,'12€');const searches=mocked.calls.filter(c=>c.url.includes('.wikipedia.org'));assert.equal(searches.length,2);assert.ok(searches.every(c=>!c.url.includes('aGVsbG8')&&!JSON.stringify(c.options).includes('test-secret')));});
 test('malformed or invalid input is rejected before producing a draft',async()=>{
   let mocked=providerMock({invalid:true});await assert.rejects(analyzeGemini({image,categories,key:'test'},mocked.fetcher),e=>e.status===422);
   mocked=providerMock();await assert.rejects(analyzeGemini({image:'https://evil.example/image',categories,key:'test'},mocked.fetcher),/imagem/);assert.equal(mocked.calls.length,0);
   assert.deepEqual(publicSearchResults('<a class="result__a" href="javascript:alert(1)">Wrong</a>'),[]);
 });
-test('model schema rejection retries only the same model in JSON mode',async()=>{
-  const base=providerMock({search:false});let rejected=false;const calls=[];
-  const fetcher=async(url,options)=>{calls.push({url:String(url),options});if(!rejected&&String(url).includes('googleapis.com')){rejected=true;return new Response(JSON.stringify({error:{status:'INVALID_ARGUMENT',message:'Request contains an invalid argument.'}}),{status:400});}return base.fetcher(url,options);};
-  const result=await analyzeGemini({image,categories,key:'test'},fetcher);assert.equal(result.products[0].price,'12€');const generations=calls.filter(c=>c.url.includes('googleapis.com'));assert.equal(generations.length,2);assert.equal(generations[0].url,generations[1].url);assert.ok(JSON.parse(generations[0].options.body).generationConfig.responseJsonSchema);assert.equal(JSON.parse(generations[1].options.body).generationConfig.responseJsonSchema,undefined);
+test('incompatible provider requests fail once without wasting quota on retries',async()=>{
+  const mocked=providerMock({status:400});const warn=console.warn;console.warn=()=>{};try{await assert.rejects(analyzeGemini({image,categories,key:'test'},mocked.fetcher),e=>e.status===502);assert.equal(mocked.calls.length,1);}finally{console.warn=warn;}
 });
 function handlerMock({admin=true,quota=true,key='test',authenticated=true}={}){
   const network=providerMock(),rpc=[];
