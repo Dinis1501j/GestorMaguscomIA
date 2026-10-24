@@ -18,3 +18,13 @@ test('unknown taxonomy stays empty and several products cannot silently split on
 test('free quota failures do not retry or expose the key',async()=>{
   let calls=0;await assert.rejects(identifyProduct({images,categories,key:'private-key'},async()=>{calls++;return new Response('',{status:429});}),e=>e.status===429&&!e.message.includes('private-key'));assert.equal(calls,1);
 });
+
+test('authenticated identification uses existing live taxonomy and never writes catalog data',async()=>{
+  const {createAnalyzeHandler}=await import('../supabase/functions/magus-analyze/handler.js');
+  const rpc=[];let prompt;
+  const client={auth:{getUser:async()=>({data:{user:{id:'admin'}}})},rpc:async name=>{rpc.push(name);return {data:true};},from:table=>{assert.equal(table,'magus_content');return {select:()=>({eq:()=>({single:async()=>({data:{catalog:{categories,products:[{subcategory:'Harry Potter'}]}}})})})};}};
+  const values={MAGUS_ALLOWED_ORIGINS:'https://magusart.pt',GEMINI_API_KEY:'test'};
+  const handler=createAnalyzeHandler({createClient:()=>client,env:name=>values[name],fetcher:async(url,options)=>{prompt=JSON.parse(options.body).systemInstruction.parts[0].text;return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify({produtos:[{nome:'Harry Potter Wizard Figure',categoria:'Figuras',subcategoria:'Harry Potter'}]})}]}}]});}});
+  const response=await handler(new Request('https://example.com',{method:'POST',headers:{Origin:'https://magusart.pt',Authorization:'Bearer test','Content-Type':'application/json'},body:JSON.stringify({task:'identify',images})}));
+  assert.equal(response.status,200);assert.equal((await response.json()).produtos[0].subcategoria,'Harry Potter');assert.match(prompt,/Harry Potter/);assert.deepEqual(rpc,['magus_is_admin','magus_ai_take_slot']);
+});
