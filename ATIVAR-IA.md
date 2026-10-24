@@ -1,6 +1,6 @@
 # GestorMaguscomIA
 
-**O modo escolhido é a IA local gratuita. Consulta [IA-LOCAL.md](IA-LOCAL.md).** A interface usa o servidor local e o Ollama; não chama a função OpenAI descrita abaixo. Esta função ficou instalada sem chave e não é utilizada pelo gestor. Não é necessário configurar uma API paga.
+**Documento histórico da primeira implementação. A versão atual usa Gemini online: consulta [IA-ONLINE.md](IA-ONLINE.md). Não configures uma chave OpenAI para a versão atual.**
 
 O gestor manual continua em `/admin/`. A nova área “Importar produtos com IA” permite carregar ou colar uma print, identificar produtos, pesquisar nomes, ler o preço e recortar várias fotografias. Revê os dados, ajusta os recortes em percentagem, retira imagens indesejadas e adiciona ao gestor. Usa “Publicar alterações” para enviar ao Supabase pelo fluxo existente, com controlo de conflitos.
 

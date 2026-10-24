@@ -2,7 +2,7 @@
 
 ## Assistente IA acrescentado
 
-O gestor manual foi preservado e ganhou a área **Importar produtos com IA**, com análise gratuita no teu computador através do Ollama. Consulta [IA-LOCAL.md](IA-LOCAL.md) para instalação e utilização. Não precisa de chave ou saldo OpenAI. O catálogo e as fotografias continuam a ser publicados no Supabase existente.
+O gestor manual foi preservado e ganhou a área **Importar produtos com IA**, diretamente no admin online. Não exige Ollama nem servidor local. Usa a função protegida do Supabase e a API Gemini num projeto com quota gratuita. Consulta [IA-ONLINE.md](IA-ONLINE.md) para ativação e utilização. O catálogo e as fotografias continuam a ser publicados no Supabase existente.
 
 Site estático em HTML, CSS e JavaScript. Não necessita de dependências npm.
 

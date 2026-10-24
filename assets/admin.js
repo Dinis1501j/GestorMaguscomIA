@@ -1,5 +1,5 @@
 import {partnersOf} from './partner-data.js?v=partners3';
-import {startAI} from './admin-ai.js';
+import {startAI} from './admin-ai.js?v=online2';
 import {asset,el,json} from './shared.js';
 import {startLogin} from './admin-login.js';
 import {saveOnlineState} from './online-store.js?v=partners3';

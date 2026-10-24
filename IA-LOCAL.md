@@ -1,5 +1,7 @@
 # IA local gratuita
 
+**Versão anterior. O admin atual usa a IA online descrita em [IA-ONLINE.md](IA-ONLINE.md), sem instalações locais.** Este documento conserva as instruções da implementação local anterior.
+
 O modo principal usa Ollama no teu computador. Não precisa de chave nem de saldo de uma API paga. O computador tem de estar ligado e o Ollama aberto. A análise não funciona num alojamento estático: usa o gestor em `http://127.0.0.1:4173/admin/`.
 
 ## Preparar
