@@ -1,4 +1,59 @@
-.ai-panel{border:1px solid #a89063;border-radius:16px;padding:24px;margin:24px 0;background:rgba(150,130,90,.07)}
-.ai-preview{display:block;max-width:100%;max-height:360px;object-fit:contain;margin:16px 0}.ai-preview[hidden]{display:none}
-.ai-card{border:1px solid #a89063;border-radius:12px;margin:18px 0;padding:18px}.ai-card>label{display:block;margin:12px 0}.ai-photo{display:flex;flex-wrap:wrap;gap:12px;align-items:center;border-top:1px solid #a89063;padding:16px 0}.ai-photo img{width:180px;height:150px;object-fit:contain}.ai-photo label{max-width:140px}.ai-photo input[type=number]{width:100%}.ai-panel a{overflow-wrap:anywhere}
-.ai-previews{display:flex;flex-wrap:wrap;gap:12px}.ai-previews .ai-preview{width:150px;height:150px;object-fit:contain}
+.ai-panel {
+  border: 1px solid #a89063;
+  border-radius: 16px;
+  padding: 24px;
+  margin: 24px 0;
+  background: rgba(150, 130, 90, 0.07);
+}
+.ai-preview {
+  display: block;
+  max-width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  margin: 16px 0;
+}
+.ai-preview[hidden] {
+  display: none;
+}
+.ai-card {
+  border: 1px solid #a89063;
+  border-radius: 12px;
+  margin: 18px 0;
+  padding: 18px;
+}
+.ai-card > label {
+  display: block;
+  margin: 12px 0;
+}
+.ai-photo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  border-top: 1px solid #a89063;
+  padding: 16px 0;
+}
+.ai-photo img {
+  width: 180px;
+  height: 150px;
+  object-fit: contain;
+}
+.ai-photo label {
+  max-width: 140px;
+}
+.ai-photo input[type='number'] {
+  width: 100%;
+}
+.ai-panel a {
+  overflow-wrap: anywhere;
+}
+.ai-previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.ai-previews .ai-preview {
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+}

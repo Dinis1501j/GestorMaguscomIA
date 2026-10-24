@@ -1,1 +1,217 @@
-<!doctype html><html lang="pt-PT"><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Administração — Magus Art</title><meta name="description" content="Esculturas impressas em 3D da Magus Art. Descobre as nossas peças, eventos e trabalhos personalizados."><link rel="icon" href="../images/logo.png"><link rel="stylesheet" href="../assets/site.css"><link rel="stylesheet" href="../assets/enhancements.css?v=online1"><link rel="stylesheet" href="../assets/admin-ai.css"><script defer src="../assets/site.js"></script><script type="module" src="../assets/admin.js?v=identify3"></script></head><body data-page="admin/"><div class="texture" aria-hidden="true"></div><a class="skip-link" href="#conteudo">Saltar para o conteúdo</a><nav aria-label="Navegação principal"><a class="nav-brand" href="../"><img src="../images/logo.png" alt="" width="38" height="38"><span>MAGUS ART</span></a><button class="menu-toggle" aria-expanded="false" aria-controls="menu">Menu ☰</button><div class="nav-links" id="menu"><a href="../">Início</a><a href="../catalogo/">Catálogo</a><a href="../agenda/">Agenda</a><a href="../sobre/">Sobre</a><a href="../contacto/">Contacto</a><a href="../contacto/#parceiros">Parceiros</a></div></nav><main id="conteudo"><section class="admin"><div class="section-head"><h1>Gestão do catálogo</h1><a href="../catalogo/">Ver site ↗</a></div><div id="session-bar" class="session-bar" hidden><span id="session-email"></span><button id="sign-out" class="button" type="button">Terminar sessão</button></div><div id="login-panel" class="login-panel" hidden><h2>Entrar na administração</h2><p>Gere as tuas peças, fotografias e eventos.</p><form id="login-form"><label>Email<input type="email" name="email" autocomplete="username" required></label><label>Palavra-passe<input type="password" name="password" autocomplete="current-password" required></label><button class="button" type="submit">Entrar</button></form><button class="button" type="button" id="forgot-password">Esqueci-me da palavra-passe</button><form id="password-form" hidden><label>Nova palavra-passe<input type="password" name="password" minlength="12" autocomplete="new-password" required></label><label>Confirmar palavra-passe<input type="password" name="confirm" minlength="12" autocomplete="new-password" required></label><button class="button" type="submit">Guardar palavra-passe</button></form><p id="login-status" role="status" aria-live="polite"></p><p>Em computadores partilhados, termina a sessão quando acabares.</p></div><p id="connection" role="status">A preparar o início de sessão…</p><div id="editor" hidden><div class="toolbar"><button class="button" id="save">Publicar alterações</button><span id="dirty" role="status">Sem alterações</span></div><div class="admin-columns"><div><h2>Peças</h2><label for="product-picker">Escolher peça</label><select id="product-picker"></select><button class="button" id="new-product">Nova peça</button><form id="product-form"><label>Nome<input name="name" required maxlength="180"></label><label>Preço (mantém ??€ enquanto não estiver confirmado)<input name="price" maxlength="60"></label><label>Categoria<select name="category" required></select></label><label>Subcategoria<input name="subcategory" maxlength="180"></label><label>Descrição<textarea name="description" rows="3" maxlength="4000"></textarea></label><label>Adicionar fotografias<input id="upload" type="file" accept="image/jpeg,image/png,image/webp" multiple></label><p>A primeira fotografia é a capa. Usa as setas para ordenar.</p><div id="image-list"></div><button class="button" type="submit">Aplicar à peça</button><button class="button danger" id="delete-product" type="button">Remover peça</button></form></div><div><h2>Categorias</h2><label for="category-picker">Escolher categoria</label><select id="category-picker"></select><button class="button" id="new-category">Nova categoria</button><form id="category-form"><label>Nome<input name="name" required maxlength="180"></label><label>Fotografia de capa<select name="cover"></select></label><button class="button" type="submit">Aplicar categoria</button><p id="category-removal-info"></p><label id="category-move-label" hidden>Mover peças para<select id="category-move-target"></select></label><button class="button danger" id="delete-category" type="button">Remover categoria</button></form><h2>Parceiros</h2><label for="partner-picker">Escolher parceiro</label><select id="partner-picker"></select><button class="button" type="button" id="new-partner">Novo parceiro</button><form id="partner-form"><label>Nome<input name="name" required maxlength="180"></label><label>Descrição<textarea name="description" maxlength="2000" rows="3"></textarea></label><label>Botão do parceiro<select name="linkType"><option value="instagram">Instagram</option><option value="website">Website</option><option value="facebook">Facebook</option></select></label><label>Endereço do link<input name="url" type="url" placeholder="https://..." required maxlength="2048"></label><p>As alterações só aparecem no site depois de publicar.</p><button class="button" type="submit">Aplicar parceiro</button><button class="button danger" type="button" id="delete-partner">Remover parceiro</button></form><h2>Eventos</h2><label for="event-picker">Escolher evento</label><select id="event-picker"></select><button class="button" id="new-event">Novo evento</button><form id="event-form"><label>Nome<input name="title" required maxlength="180"></label><label>Data<input name="date" required maxlength="180"></label><label>Horário<input name="time" maxlength="180"></label><label>Local<input name="location" maxlength="180"></label><label>Descrição<textarea name="description" maxlength="4000"></textarea></label><button class="button" type="submit">Aplicar evento</button><button class="button danger" id="delete-event" type="button">Remover evento</button></form><h2>Fotografias por rever</h2><p>Estas imagens já existiam na pasta, mas não estão publicadas no catálogo. Escolhe uma peça antes de as associar.</p><div id="unassigned"></div></div></div></div></section></main><footer><a class="foot-brand" href="../"><img src="../images/logo.png" alt="" width="20" height="20"><span>Magus Art</span></a><span>© 2026 Magus Art. Todos os direitos reservados.</span></footer></body></html>
+<!doctype html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Administração — Magus Art</title>
+    <meta
+      name="description"
+      content="Esculturas impressas em 3D da Magus Art. Descobre as nossas peças, eventos e trabalhos personalizados."
+    />
+    <link rel="icon" href="../images/logo.png" />
+    <link rel="stylesheet" href="../assets/site.css" />
+    <link rel="stylesheet" href="../assets/enhancements.css?v=online1" />
+    <link rel="stylesheet" href="../assets/admin-ai.css" />
+    <script defer src="../assets/site.js"></script>
+    <script type="module" src="../assets/admin.js?v=identify3"></script>
+  </head>
+  <body data-page="admin/">
+    <div class="texture" aria-hidden="true"></div>
+    <a class="skip-link" href="#conteudo">Saltar para o conteúdo</a>
+    <nav aria-label="Navegação principal">
+      <a class="nav-brand" href="../"
+        ><img src="../images/logo.png" alt="" width="38" height="38" /><span
+          >MAGUS ART</span
+        ></a
+      ><button class="menu-toggle" aria-expanded="false" aria-controls="menu">
+        Menu ☰
+      </button>
+      <div class="nav-links" id="menu">
+        <a href="../">Início</a><a href="../catalogo/">Catálogo</a
+        ><a href="../agenda/">Agenda</a><a href="../sobre/">Sobre</a
+        ><a href="../contacto/">Contacto</a><a href="../contacto/#parceiros">Parceiros</a>
+      </div>
+    </nav>
+    <main id="conteudo">
+      <section class="admin">
+        <div class="section-head">
+          <h1>Gestão do catálogo</h1>
+          <a href="../catalogo/">Ver site ↗</a>
+        </div>
+        <div id="session-bar" class="session-bar" hidden>
+          <span id="session-email"></span
+          ><button id="sign-out" class="button" type="button">Terminar sessão</button>
+        </div>
+        <div id="login-panel" class="login-panel" hidden>
+          <h2>Entrar na administração</h2>
+          <p>Gere as tuas peças, fotografias e eventos.</p>
+          <form id="login-form">
+            <label
+              >Email<input
+                type="email"
+                name="email"
+                autocomplete="username"
+                required /></label
+            ><label
+              >Palavra-passe<input
+                type="password"
+                name="password"
+                autocomplete="current-password"
+                required /></label
+            ><button class="button" type="submit">Entrar</button>
+          </form>
+          <button class="button" type="button" id="forgot-password">
+            Esqueci-me da palavra-passe
+          </button>
+          <form id="password-form" hidden>
+            <label
+              >Nova palavra-passe<input
+                type="password"
+                name="password"
+                minlength="12"
+                autocomplete="new-password"
+                required /></label
+            ><label
+              >Confirmar palavra-passe<input
+                type="password"
+                name="confirm"
+                minlength="12"
+                autocomplete="new-password"
+                required /></label
+            ><button class="button" type="submit">Guardar palavra-passe</button>
+          </form>
+          <p id="login-status" role="status" aria-live="polite"></p>
+          <p>Em computadores partilhados, termina a sessão quando acabares.</p>
+        </div>
+        <p id="connection" role="status">A preparar o início de sessão…</p>
+        <div id="editor" hidden>
+          <div class="toolbar">
+            <button class="button" id="save">Publicar alterações</button
+            ><span id="dirty" role="status">Sem alterações</span>
+          </div>
+          <div class="admin-columns">
+            <div>
+              <h2>Peças</h2>
+              <label for="product-picker">Escolher peça</label
+              ><select id="product-picker"></select
+              ><button class="button" id="new-product">Nova peça</button>
+              <form id="product-form">
+                <label>Nome<input name="name" required maxlength="180" /></label
+                ><label
+                  >Preço (mantém ??€ enquanto não estiver confirmado)<input
+                    name="price"
+                    maxlength="60" /></label
+                ><label>Categoria<select name="category" required></select></label
+                ><label>Subcategoria<input name="subcategory" maxlength="180" /></label
+                ><label
+                  >Descrição<textarea
+                    name="description"
+                    rows="3"
+                    maxlength="4000"
+                  ></textarea></label
+                ><label
+                  >Adicionar fotografias<input
+                    id="upload"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                /></label>
+                <p>A primeira fotografia é a capa. Usa as setas para ordenar.</p>
+                <div id="image-list"></div>
+                <button class="button" type="submit">Aplicar à peça</button
+                ><button class="button danger" id="delete-product" type="button">
+                  Remover peça
+                </button>
+              </form>
+            </div>
+            <div>
+              <h2>Categorias</h2>
+              <label for="category-picker">Escolher categoria</label
+              ><select id="category-picker"></select
+              ><button class="button" id="new-category">Nova categoria</button>
+              <form id="category-form">
+                <label>Nome<input name="name" required maxlength="180" /></label
+                ><label>Fotografia de capa<select name="cover"></select></label
+                ><button class="button" type="submit">Aplicar categoria</button>
+                <p id="category-removal-info"></p>
+                <label id="category-move-label" hidden
+                  >Mover peças para<select id="category-move-target"></select></label
+                ><button class="button danger" id="delete-category" type="button">
+                  Remover categoria
+                </button>
+              </form>
+              <h2>Parceiros</h2>
+              <label for="partner-picker">Escolher parceiro</label
+              ><select id="partner-picker"></select
+              ><button class="button" type="button" id="new-partner">
+                Novo parceiro
+              </button>
+              <form id="partner-form">
+                <label>Nome<input name="name" required maxlength="180" /></label
+                ><label
+                  >Descrição<textarea
+                    name="description"
+                    maxlength="2000"
+                    rows="3"
+                  ></textarea></label
+                ><label
+                  >Botão do parceiro<select name="linkType">
+                    <option value="instagram">Instagram</option>
+                    <option value="website">Website</option>
+                    <option value="facebook">Facebook</option>
+                  </select></label
+                ><label
+                  >Endereço do link<input
+                    name="url"
+                    type="url"
+                    placeholder="https://..."
+                    required
+                    maxlength="2048"
+                /></label>
+                <p>As alterações só aparecem no site depois de publicar.</p>
+                <button class="button" type="submit">Aplicar parceiro</button
+                ><button class="button danger" type="button" id="delete-partner">
+                  Remover parceiro
+                </button>
+              </form>
+              <h2>Eventos</h2>
+              <label for="event-picker">Escolher evento</label
+              ><select id="event-picker"></select
+              ><button class="button" id="new-event">Novo evento</button>
+              <form id="event-form">
+                <label>Nome<input name="title" required maxlength="180" /></label
+                ><label>Data<input name="date" required maxlength="180" /></label
+                ><label>Horário<input name="time" maxlength="180" /></label
+                ><label>Local<input name="location" maxlength="180" /></label
+                ><label
+                  >Descrição<textarea
+                    name="description"
+                    maxlength="4000"
+                  ></textarea></label
+                ><button class="button" type="submit">Aplicar evento</button
+                ><button class="button danger" id="delete-event" type="button">
+                  Remover evento
+                </button>
+              </form>
+              <h2>Fotografias por rever</h2>
+              <p>
+                Estas imagens já existiam na pasta, mas não estão publicadas no catálogo.
+                Escolhe uma peça antes de as associar.
+              </p>
+              <div id="unassigned"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer>
+      <a class="foot-brand" href="../"
+        ><img src="../images/logo.png" alt="" width="20" height="20" /><span
+          >Magus Art</span
+        ></a
+      ><span>© 2026 Magus Art. Todos os direitos reservados.</span>
+    </footer>
+  </body>
+</html>
