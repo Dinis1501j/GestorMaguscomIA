@@ -43,6 +43,9 @@ export async function identifyProduct(
   if (extractPhotos)
     instruction +=
       ' Each product MUST also include fotos: [{"imagem":0,"x":0,"y":0,"width":1,"height":1}]. imagem is the ZERO-BASED index of the submitted image. Coordinates are normalized fractions 0..1 of that image; x+width and y+height must not exceed 1. A screenshot or collage may contain TWO OR MORE distinct photographs of the SAME product. Return a separate rectangle for EACH complete photograph, while keeping exactly ONE product for all its angles. Exclude text, price, toolbars, thumbnails when a larger copy exists, and screenshot UI. Do not crop individual objects or body parts inside a single real photograph. For a standalone photo return the whole image (0,0,1,1). Include photos from EVERY submitted image showing the product, not only the first. Never invent photos. Maximum 48 photos per product.';
+  if (extractPhotos)
+    instruction +=
+      ' Count the photographic panels BEFORE identifying the product. A single rectangle enclosing several photographs is INVALID. A screenshot with three side-by-side photographs requires three fotos entries with the same imagem index and different x coordinates. A 2 by 2 grid requires four entries. Keep variants/angles together when the user declares one product.';
   let response;
   try {
     response = await fetcher(

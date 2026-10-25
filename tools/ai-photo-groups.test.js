@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { photoGroups, validatePhotoRegions } from '../assets/ai-photo-regions.js';
+import { splitPhotoPanels } from '../assets/ai-photo-panels.js';
 import { identifyProduct } from '../supabase/functions/magus-analyze/identify.js';
 const image = 'data:image/jpeg;base64,aGVsbG8=',
   categories = [{ id: 'figuras', name: 'Figuras' }];
@@ -79,4 +80,30 @@ test('bad image indices, out-of-bounds crops and omitted source images are rejec
     );
   }
   assert.throws(() => validatePhotoRegions({ fotos: [{ ...full(0), x: NaN }] }, 1));
+});
+
+test('continuous gutters split collage columns and grids without splitting an ordinary photo', () => {
+  const width = 600,
+    height = 400,
+    data = new Uint8ClampedArray(width * height * 4);
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4,
+        gutter = (x >= 195 && x < 210) || (x >= 395 && x < 410);
+      data[i] = gutter ? 255 : 60;
+      data[i + 1] = gutter ? 255 : 70;
+      data[i + 2] = gutter ? 255 : 80;
+      data[i + 3] = 255;
+    }
+  assert.equal(splitPhotoPanels({ data, width, height }, full(0)).length, 3);
+  data.fill(100);
+  for (let i = 3; i < data.length; i += 4) data[i] = 255;
+  assert.equal(splitPhotoPanels({ data, width, height }, full(0)).length, 1);
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++)
+      if ((x >= 292 && x < 308) || (y >= 192 && y < 208)) {
+        const i = (y * width + x) * 4;
+        data[i] = data[i + 1] = data[i + 2] = 255;
+      }
+  assert.equal(splitPhotoPanels({ data, width, height }, full(0)).length, 4);
 });

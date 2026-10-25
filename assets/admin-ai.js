@@ -1,7 +1,7 @@
 import { el } from './shared.js';
 import { validateIdentification } from './ai-identification.js';
 import { photoGroups } from './ai-photo-regions.js';
-import { createPhotoReview } from './ai-photo-review.js';
+import { createPhotoReview } from './ai-photo-review.js?v=panels1';
 
 export function startAI({ client, getState, addProducts, setBusy }) {
   const panel = el('section', { class: 'ai-panel' }),
