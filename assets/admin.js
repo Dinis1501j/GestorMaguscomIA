@@ -1,6 +1,6 @@
 import { partnersOf } from './partner-data.js?v=partners3';
 import { startButtonLogos } from './admin-logos.js';
-import { startAI } from './admin-ai.js?v=identify3';
+import { startAI } from './admin-ai.js?v=photos2';
 import { asset, el, json } from './shared.js';
 import { startLogin } from './admin-login.js';
 import { saveOnlineState } from './online-store.js?v=logos1';

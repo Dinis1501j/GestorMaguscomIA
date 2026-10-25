@@ -90,6 +90,7 @@ export function createAnalyzeHandler({ createClient, env, fetcher = fetch }) {
               categories,
               subcategories,
               multiple: body.multiple === true,
+              extractPhotos: body.extractPhotos === true,
               key,
             },
             fetcher,

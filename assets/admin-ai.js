@@ -1,5 +1,7 @@
 import { el } from './shared.js';
 import { validateIdentification } from './ai-identification.js';
+import { photoGroups } from './ai-photo-regions.js';
+import { createPhotoReview } from './ai-photo-review.js';
 
 export function startAI({ client, getState, addProducts, setBusy }) {
   const panel = el('section', { class: 'ai-panel' }),
@@ -17,22 +19,25 @@ export function startAI({ client, getState, addProducts, setBusy }) {
     ),
     status = el('p', { role: 'status', 'aria-live': 'polite' }),
     results = el('div');
-  const separate = el('input', { type: 'checkbox' }),
-    separateLabel = el(
-      'label',
-      {},
-      'São produtos diferentes (um produto por foto; uma análise por foto)',
-    );
-  separateLabel.prepend(separate);
+  const mode = el('select', { 'aria-label': 'Como agrupar as imagens' });
+  mode.append(
+    el('option', { value: 'same' }, 'Todas as imagens são do mesmo produto'),
+    el('option', { value: 'separate' }, 'Produtos diferentes — um produto por ficheiro'),
+  );
+  mode.value = 'same';
+  const modeLabel = el('label', {}, 'Como agrupar as imagens');
+  modeLabel.append(mode);
+  const clear = el('button', { type: 'button', class: 'button' }, 'Limpar imagens');
   panel.append(
     el('h2', {}, 'Identificar produto com IA'),
     el(
       'p',
       {},
-      'Escolhe uma ou mais fotos do mesmo produto, de ângulos diferentes. A IA sugere o nome em inglês, o tipo de produto e a série ou franquia. Revê os campos antes de adicionar. O gestor manual continua disponível.',
+      'Adiciona fotos ou prints. Por defeito, todas pertencem a um único produto. Se uma print tiver várias fotografias, a IA separa-as para as associares ao mesmo produto. Revê os dados e os recortes antes de adicionar.',
     ),
     input,
-    separateLabel,
+    modeLabel,
+    clear,
     preview,
     analyze,
     status,
@@ -41,18 +46,56 @@ export function startAI({ client, getState, addProducts, setBusy }) {
   document.querySelector('#editor .toolbar').after(panel);
   let images = [],
     working = false;
+  function renderSources() {
+    preview.replaceChildren();
+    for (const [index, src] of images.entries()) {
+      const wrapper = el('div'),
+        remove = el(
+          'button',
+          { type: 'button', class: 'button' },
+          'Retirar imagem ' + (index + 1),
+        );
+      remove.onclick = () => {
+        if (working) return;
+        images.splice(index, 1);
+        results.replaceChildren();
+        renderSources();
+        status.textContent = images.length + ' imagem(ns) pronta(s).';
+      };
+      wrapper.append(
+        el('img', { src, alt: 'Imagem enviada ' + (index + 1), class: 'ai-preview' }),
+        remove,
+      );
+      preview.append(wrapper);
+    }
+  }
+  clear.onclick = () => {
+    if (working) return;
+    images = [];
+    input.value = '';
+    results.replaceChildren();
+    renderSources();
+    status.textContent = 'Adiciona as imagens de um produto para começar.';
+  };
+  mode.onchange = () => {
+    results.replaceChildren();
+    status.textContent =
+      mode.value === 'same'
+        ? 'Será criado um único produto com todas as fotografias.'
+        : 'Será analisado um produto por ficheiro. As fotografias dentro de cada print ficam juntas.';
+  };
   async function select(files) {
     if (working) return;
     working = true;
     analyze.disabled = true;
     input.disabled = true;
-    images = [];
     results.replaceChildren();
-    preview.replaceChildren();
     try {
-      if (!files.length || files.length > 8)
-        throw Error('Escolhe entre uma e oito fotos do mesmo produto.');
-      const prepared = [];
+      if (!files.length || files.length + images.length > 8)
+        throw Error(
+          'Podes adicionar até oito imagens. Retira algumas ou usa “Limpar imagens”.',
+        );
+      const prepared = [...images];
       for (const file of files) {
         if (
           !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) ||
@@ -70,7 +113,7 @@ export function startAI({ client, getState, addProducts, setBusy }) {
         if (image.naturalWidth * image.naturalHeight > 40000000)
           throw Error('Reduz a resolução da fotografia.');
         const canvas = document.createElement('canvas'),
-          scale = Math.min(1, 1600 / Math.max(image.naturalWidth, image.naturalHeight));
+          scale = Math.min(1, 2200 / Math.max(image.naturalWidth, image.naturalHeight));
         canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
         canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
         canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
@@ -81,17 +124,21 @@ export function startAI({ client, getState, addProducts, setBusy }) {
           'As fotos são demasiado grandes. Reduz a resolução ou envia menos fotos.',
         );
       images = prepared;
-      for (const [i, src] of images.entries())
-        preview.append(el('img', { src, alt: 'Ângulo ' + (i + 1), class: 'ai-preview' }));
+      renderSources();
       status.textContent =
         images.length +
-        ' foto(s) do mesmo produto prontas. São enviadas ao Gemini através do Supabase ao analisar.';
+        ' imagem(ns) pronta(s). ' +
+        (mode.value === 'same'
+          ? 'Todas serão analisadas como um único produto.'
+          : 'Será analisado um produto por ficheiro.') +
+        ' As imagens são enviadas ao Gemini através do Supabase.';
     } catch (e) {
       status.textContent = e.message;
     } finally {
       working = false;
       analyze.disabled = false;
       input.disabled = false;
+      input.value = '';
     }
   }
   input.onchange = () => select([...input.files]);
@@ -115,16 +162,17 @@ export function startAI({ client, getState, addProducts, setBusy }) {
     working = true;
     analyze.disabled = true;
     input.disabled = true;
-    separate.disabled = true;
+    mode.disabled = true;
+    clear.disabled = true;
     setBusy(true);
     results.replaceChildren();
     status.textContent = 'A identificar o produto e a franquia…';
     try {
-      const groups = separate.checked ? images.map((image) => [image]) : [[...images]];
+      const groups = photoGroups(images, mode.value);
       const drafts = [];
       for (const photos of groups) {
         const { data, error } = await client.functions.invoke('magus-analyze', {
-          body: { task: 'identify', images: photos },
+          body: { task: 'identify', images: photos, extractPhotos: true },
         });
         if (error) {
           let detail;
@@ -177,12 +225,20 @@ export function startAI({ client, getState, addProducts, setBusy }) {
             'Campos vazios indicam incerteza ou ausência de uma categoria adequada. Confirma a identificação. Todas as fotos serão associadas a este produto.',
           ),
         );
+        const reviewedPhotos = await createPhotoReview(card, p, photos);
         const add = el(
           'button',
           { type: 'button', class: 'button' },
           'Adicionar ao gestor para rever',
         );
         add.onclick = () => {
+          let finalPhotos;
+          try {
+            finalPhotos = reviewedPhotos();
+          } catch (error) {
+            status.textContent = error.message;
+            return;
+          }
           if (!name.value.trim() || !category.value || !price.value.trim()) {
             status.textContent =
               'Preenche o nome, a categoria e o preço (ou ??€) antes de adicionar.';
@@ -198,7 +254,7 @@ export function startAI({ client, getState, addProducts, setBusy }) {
               category: category.value,
               subcategory: subcategory.value.trim(),
               price: price.value.trim(),
-              photos,
+              photos: finalPhotos,
             },
           ]);
           card.remove();
@@ -217,7 +273,8 @@ export function startAI({ client, getState, addProducts, setBusy }) {
       setBusy(false);
       analyze.disabled = false;
       input.disabled = false;
-      separate.disabled = false;
+      mode.disabled = false;
+      clear.disabled = false;
     }
   };
 }

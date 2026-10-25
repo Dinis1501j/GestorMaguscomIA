@@ -1,13 +1,15 @@
-# Identificação de produtos por fotografias
+# Identificação de produtos por fotos e prints
 
-A área opcional “Identificar produto com IA” aceita até oito fotografias JPEG, PNG ou WebP. Por defeito, todas representam ângulos do mesmo produto e originam um único rascunho. A opção “São produtos diferentes” identifica cada foto separadamente (consome uma análise por foto).
+Na área opcional **Identificar produto com IA**, o modo predefinido é **Todas as imagens são do mesmo produto**. Cinco fotos originam um produto com cinco fotografias. Podes selecionar vários ficheiros de uma vez ou juntá-los em seleções sucessivas (até oito imagens enviadas). **Limpar imagens** permite começar outro produto.
 
-O Gemini devolve JSON com `produtos: [{nome, categoria, subcategoria}]`. O nome é solicitado em inglês. Categoria significa tipo de produto; subcategoria significa série, filme, anime ou jogo. A função consulta o catálogo atual no Supabase para reutilizar as categorias e subcategorias existentes. A normalização ignora maiúsculas e acentos, preservando a grafia já utilizada. Categorias desconhecidas ficam vazias e não são criadas automaticamente. Franquias incertas devem ficar vazias.
+Se uma print ou montagem tiver várias fotografias do produto, a IA devolve um recorte para cada fotografia, associado ao mesmo produto. Antes de adicionar ao gestor, podes rever os recortes, ajustar as percentagens e desmarcar fotografias repetidas ou indesejadas. Prints e fotos normais podem ser misturadas no mesmo envio.
 
-Todos os campos são editáveis antes de adicionar. O preço é preenchido manualmente (inicialmente `??€`). As fotografias são preservadas, sem recortes automáticos. “Adicionar ao gestor para rever” cria apenas alterações pendentes; “Publicar alterações” continua a ser necessário para guardar online.
+O modo **Produtos diferentes — um produto por ficheiro** só deve ser escolhido quando cada ficheiro representa um produto diferente. Consome uma análise por ficheiro; as fotografias dentro de cada print continuam associadas ao produto desse ficheiro. Prints com produtos diferentes misturados devem ser separadas por produto antes de enviar.
 
-Criar, editar e apagar manualmente mantém o funcionamento existente. A integração apenas transfere o rascunho confirmado e a subcategoria para o editor. A autenticação de administrador, a chave Gemini guardada no Supabase e o limite de 20 análises/hora mantêm-se. Não são criados produtos nos testes.
+O nome continua a ser sugerido em inglês. Categoria significa tipo de produto; subcategoria significa franquia, série, filme, anime ou jogo. Os campos são editáveis e reutilizam a grafia das categorias/subcategorias existentes. O preço continua manual, inicialmente `??€`.
 
-A antiga análise de prints permanece compatível no endpoint através de `{image}`; a nova interface usa `{task: 'identify', images: [...]}`. A configuração de secrets descrita em IA-ONLINE.md mantém-se; a pesquisa pública do modo antigo não é usada na identificação nova.
+A função recebe `{task: 'identify', images: [...], extractPhotos: true}`. Cada objeto em `produtos` inclui `nome`, `categoria`, `subcategoria` e `fotos`: uma lista de `{imagem, x, y, width, height}`. O índice `imagem` começa em zero; os recortes são frações 0..1 da imagem indicada. Índices, limites e cobertura de todas as imagens do mesmo produto são validados. São permitidas até 48 fotos por produto. Clientes antigos sem `extractPhotos` continuam compatíveis.
 
-Validação online em 24/10/2026: três fotografias originaram um único produto, Pokémon Poké Ball Keychain / Porta-Chaves / Pokémon. Confirmada a passagem das três fotos e subcategoria ao editor. O teste não foi publicado. A limpeza do rascunho pendente não pôde ser confirmada porque o navegador deixou de responder ao aviso de saída. 22 testes automáticos passaram (incluindo os testes do gestor manual).
+**Adicionar ao gestor para rever** só cria alterações pendentes. É necessário **Publicar alterações** para guardar online. O gestor manual, as fotos publicadas, a escolha de logótipos e a navegação pública mantêm-se. Secrets, autenticação e limite de 20 análises/hora não mudam.
+
+Validação automática: cinco fotos num único produto; uma print com três recortes; mistura de fotos e prints; rejeição de recortes inválidos e fontes omitidas; compatibilidade com clientes antigos. Os 30 testes do projeto passaram.
